@@ -65,11 +65,14 @@ class DownloadFileLink(FileLink):
 
 class KeywordAnalysis():
     '''
-    Using Jaccard similarity to identify similar documents in a corpus
+    Using word statistics to analyse words in a collection of corpus 
+    and identify whether certain words are over or under-represented 
+    in a particular corpus compared to their representation in other 
+    corpus
     '''
     def __init__(self):
         '''
-        Initiate the DocumentSimilarity
+        Initiate the KeywordAnalysis
         '''
         # initiate other necessary variables
         self.large_file_size = 1000000
@@ -174,31 +177,6 @@ class KeywordAnalysis():
         """
         
         
-    def click_button_widget(
-            self, 
-            desc: str, 
-            margin: str='10px 0px 0px 10px',
-            width='320px'
-            ):
-        '''
-        Create a widget to show the button to click
-        
-        Args:
-            desc: description to display on the button widget
-            margin: top, right, bottom and left margins for the button widget
-        '''
-        # widget to show the button to click
-        button = widgets.Button(description=desc, 
-                                layout=Layout(margin=margin, width=width),
-                                style=dict(font_style='italic',
-                                           font_weight='bold'))
-        
-        # the output after clicking the button
-        out = widgets.Output()
-        
-        return button, out
-    
-    
     def check_file_size(self, file):
         '''
         Function to check the uploaded file size
@@ -373,52 +351,72 @@ class KeywordAnalysis():
             self.text_df.drop_duplicates(subset='text_id', keep='first', inplace=True)
         
     
-    def calculate_corpus_statistics(self):
+    def calculate_word_statistics(self):
         '''
-        Function to calculate xxx
-
-        Args:
-            xxx
+        Function to calculate word statistics in a collection of corpus
+        The statistics include normalised word count, log-likelihood, 
+        Bayes factor BIC, effect size for log-likelihood (ELL), 
+        relative risk, log ratio and odds ratio. For more information, 
+        please visit this website: https://ucrel.lancs.ac.uk/llwizard.html
         '''
+        # collate all texts based on source and 
+        # use CountVectorizer to count the number of words in each source
         self.wordcount_df = collapse_corpus_by_source(df=self.text_df)
         self.wordcount_df = count_words(df=self.wordcount_df)
         
-        # get rowsums and colsums for downstream calculations
+        # get total word counts based on source and overall in the corpus
         self.wordcount_df, total_by_source, total_words_in_corpus = get_totals(df=self.wordcount_df)
         
-        # then apply on our corpus
+        # pairwise comparison between a particular corpus vs the rest of the corpus
         self.pairwise_compare = two_corpus_compare(self.wordcount_df, 
                                                    total_by_source, 
                                                    total_words_in_corpus)
         
         self.all_words = self.pairwise_compare.word.to_list()
         
-        # then apply on our corpus
+        # multi-corpora analysis
         self.multicorp_comparison = n_corpus_compare(self.wordcount_df, 
                                                      total_by_source, 
                                                      total_words_in_corpus)
         
         
     def visualize_stats(self, 
-                        df, 
-                        index, 
-                        inc_chart, 
-                        title, 
-                        last_chart, 
-                        figsize, 
-                        bbox_to_anchor,
-                        multi=False,
-                        yticks=None):
-        
+                        df: pd.DataFrame, 
+                        yticks,
+                        index: int, 
+                        inc_chart: list, 
+                        title: str, 
+                        last_chart: bool, 
+                        figsize: tuple, 
+                        bbox_to_anchor: tuple,
+                        multi: bool = False):
+        '''
+        Function to visualize the calculated statistics onto a line chart
+
+        Args:
+            df: the pandas dataframe containing the selected data 
+            yticks: the calculated yticks for the line chart 
+            index: the index of the first word 
+            inc_chart: the list of statistics to be included in the chart 
+            title: the title of the chart, 
+            last_chart: whether it is the last chart or not, 
+            figsize: the size of the chart, 
+            bbox_to_anchor: the location of the legend box,
+            multi: whether the chart is for multi-corpora analysis or not
+        '''
+        # define the parameters for the chart
         plt.figure(figsize=figsize)
         sns.set_theme(style="whitegrid")
         plt.margins(x=0.025, tight=True)
         plt.title(title)
         
+        # define the data
         data = df.iloc[index:index+40,inc_chart]
         
+        # create the line chart
         fig = sns.lineplot(data=data, palette="tab10", linewidth=2.5)
         
+        # if last chart include words in the x-ticks + legend on the right
         if last_chart:
             plt.xticks(rotation=90, 
                        fontsize='small')
@@ -430,68 +428,106 @@ class KeywordAnalysis():
             plt.xticks(ticks=range(0,40),
                        labels=['']*40)
             fig.legend('')
+            
+        # define x-label and y-ticks
         plt.xlabel('')
-        plt.yticks(yticks)
+        #plt.yticks(yticks)
         
         return fig
     
     
-    def create_graphs(self, viz_df, index, inc_corpus, inc_charts, options, multi):
+    def set_yticks(self, 
+                   df: pd.DataFrame, 
+                   inc_chart: list, 
+                   inc_corpus: list = None, 
+                   inc_col: list = None, 
+                   multi: bool = True):
+        '''
+        Function to calculate the minimum and maximum values for the y-ticks
+        and generate a numpy array for the y-ticks
+
+        Args:
+            df: the pandas dataframe containing the selected data 
+            inc_chart: the list of statistics to be included in the chart 
+            inc_corpus: the list of corpus to be included in the chart 
+            inc_col: the list of columns to be included in the chart
+            multi: whether the chart is for multi-corpora analysis or not
+        '''
+        # create placeholders for minimum and maximum values
+        max_values = []; min_values = []
         
+        # define the minimum and maximum values baed on the data
+        if multi:
+            for chart in inc_chart:
+                max_values.append(max(df.iloc[:,chart].to_list()))
+                min_values.append(min(df.iloc[:,chart].to_list()))
+        else:
+            for corpus in inc_corpus:
+                for col in inc_col:
+                    max_values.append(max(df[col+corpus].to_list()))
+                    min_values.append(min(df[col+corpus].to_list()))
+        max_value = max(round(max(max_values),0),0.05)
+        min_value = min(round(min(min_values),0),-0.05)
+        
+        # generate y-ticks based on calculated minimum and maximum values
+        if not(max_value<1 and min_value>-1):
+            if max_value%5!=0:
+                max_value=(max_value//5+1)*5
+            if min_value%5!=0:
+                if min_value>0:
+                    min_value=(min_value//5+1)*5
+                else:
+                    min_value=((min_value//5))*5
+            yticks=np.linspace(int(min_value), int(max_value), int((max_value-min_value)/5+1))
+        else:
+            yticks=np.linspace(min_value, max_value, 5)
+        
+        return yticks
+    
+    
+    def create_graphs(self, 
+                      viz_df: pd.DataFrame, 
+                      index: int, 
+                      inc_corpus: list, 
+                      inc_charts: list, 
+                      options: dict(), 
+                      multi: bool):
+        '''
+        Function to generate line charts based on selected parameters
+
+        Args:
+            viz_df: the pandas dataframe containing the selected data 
+            index: the index of the first word 
+            inc_corpus: the list of corpus to be included in the chart 
+            inc_charts: the list of statistics to be included in the chart 
+            options: the dictionary containing the statistic options to display 
+            multi: whether the chart is for multi-corpora analysis or not 
+        '''
         inc_chart = [options[chart][0] for chart in inc_charts]
         
         if multi:
-            max_values = []; min_values = []
-            for chart in inc_chart:
-                max_values.append(max(self.multicorp_comparison.iloc[:,chart].to_list()))
-                min_values.append(min(self.multicorp_comparison.iloc[:,chart].to_list()))
-            max_value = max(round(max(max_values),0),0.05)
-            min_value = min(round(min(min_values),0),-0.05)
-            if not(max_value<1 and min_value>-1):
-                if max_value%5!=0:
-                    max_value=(max_value//5+1)*5
-                if min_value%5!=0:
-                    if min_value>0:
-                        min_value=(min_value//5+1)*5
-                    else:
-                        min_value=((min_value//5))*5
-                yticks=np.linspace(int(min_value), int(max_value), int((max_value-min_value)/5+1))
-            else:
-                yticks=np.linspace(min_value, max_value, 5)
+            yticks = self.set_yticks(self.multicorp_comparison, inc_chart)
             last_chart = True
             which_corpus = 'multi-corpus'
             figsize=(8, 4)
             bbox_to_anchor=(1.3, 0.5)
             fig = self.visualize_stats(viz_df, 
+                                       yticks,
                                        index, 
                                        inc_chart, 
                                        which_corpus, 
                                        last_chart,
                                        figsize, 
                                        bbox_to_anchor,
-                                       multi,
-                                       yticks)
+                                       multi)
             plt.show()
         else:
             inc_col = [options[chart][1] for chart in inc_charts]
-            max_values = []; min_values = []
-            for corpus in inc_corpus:
-                for col in inc_col:
-                    max_values.append(max(self.pairwise_compare[col+corpus].to_list()))
-                    min_values.append(min(self.pairwise_compare[col+corpus].to_list()))
-            max_value = max(round(max(max_values),0),0.05)
-            min_value = min(round(min(min_values),0),-0.05)
-            if not(max_value<1 and min_value>-1):
-                if max_value%5!=0:
-                    max_value=(max_value//5+1)*5
-                if min_value%5!=0:
-                    if min_value>0:
-                        min_value=(min_value//5+1)*5
-                    else:
-                        min_value=((min_value//5))*5
-                yticks=np.linspace(int(min_value), int(max_value), int((max_value-min_value)/5+1))
-            else:
-                yticks=np.linspace(min_value, max_value, 5)
+            yticks = self.set_yticks(self.pairwise_compare, 
+                                     inc_chart, 
+                                     inc_corpus, 
+                                     inc_col, 
+                                     multi=False)
             
             # display bar chart for every selected entity type
             for n, which_corpus in enumerate(inc_corpus):
@@ -505,14 +541,14 @@ class KeywordAnalysis():
                 figsize=(7.8, 3)
                 bbox_to_anchor=(1.5, 0.5)
                 fig = self.visualize_stats(df, 
+                                           yticks,
                                            index, 
                                            inc_chart, 
                                            which_corpus, 
                                            last_chart, 
                                            figsize, 
                                            bbox_to_anchor,
-                                           multi,
-                                           yticks)
+                                           multi)
                 plt.show()
         
     def analyse_stats(
@@ -520,22 +556,21 @@ class KeywordAnalysis():
             multi: bool = False
             ):
         '''
-        Create a horizontal bar plot for displaying top n named entities
+        Function to generate widgets for analysing calculated statistics
 
         Args:
-            top_ent: the top entities to display
-            top_ent: the number of top entities to display
-            title: title of the bar plot
-            color: color of the bars
+            multi: whether the chart is for multi-corpora analysis or not 
         '''
+        # define corpus list
         corpus_options = list(set(self.text_df.source))
         
-        # widget to select top entity type and display top tokens
+        # widget to select corpus to include in the analysis
         enter_corpus, select_corpus = self.select_multiple_options('<b>Select corpus:</b>',
                                                                corpus_options,
                                                                corpus_options,
                                                                '150px')
         
+        # whether to do pairwise or multi-corpora analysis
         if multi:
             viz_df = self.multicorp_comparison.copy()
             options = {'log-likelihood':[-3],
@@ -551,20 +586,21 @@ class KeywordAnalysis():
                        'relative risk':[10,'relative_risk_'],
                        'log ratio':[11,'log_ratio_'],
                        'odds ratio':[12,'odds_ratio_']}
-            
+        # set the words as the index of the dataframe
         viz_df.set_index('word', inplace=True)
             
-        # widget to select top entity type and display top tokens
+        # widget to select statistics to be included in the line chart
         enter_chart, select_chart = self.select_multiple_options('<b>Select statistic(s) to display):</b>',
                                                                list(options.keys()),
                                                                list(options.keys()),
                                                                '250px')
         
-        # widget to analyse tags
+        # widget to display analysis
         display_button, display_out = self.click_button_widget(desc='Display chart',
                                                        margin='0px 35px 0px 0px',
                                                        width='152px')
         
+        # selection slider to select words in the corpus
         display_index = widgets.SelectionSlider(
             options=self.all_words[:-40],
             value=self.all_words[0],
@@ -576,13 +612,14 @@ class KeywordAnalysis():
             layout = widgets.Layout(width='280px')
         )
         
-        # give notification when file is uploaded
+        # update charts when the slider is moved
         def _cb(change):
             with display_out:
-                # clear output and give notification that file is being uploaded
+                # clear output and get word index
                 clear_output(wait=False)
                 index= self.all_words.index(display_index.value)
                 
+                # display updated charts
                 self.create_graphs(viz_df, 
                                    index, 
                                    select_corpus.value, 
@@ -590,16 +627,17 @@ class KeywordAnalysis():
                                    options, 
                                    multi)
         
-        # observe when file is uploaded and display output
+        # observe when selection slider is moved
         display_index.observe(_cb, names='value')
         
-        # function to define what happens when the button is clicked
+        # function to define what happens when the display button is clicked
         def on_display_button_clicked(_):
-             # clear display_out
             with display_out:
+                # clear output and get word index
                 clear_output()
                 index=0
                 
+                # display updated charts
                 self.create_graphs(viz_df, 
                                    index, 
                                    select_corpus.value, 
@@ -607,7 +645,7 @@ class KeywordAnalysis():
                                    options, 
                                    multi)
         
-        # link the button with the function
+        # link the display button with the function
         display_button.on_click(on_display_button_clicked)
         
         # displaying inputs, buttons and their outputs
@@ -618,6 +656,7 @@ class KeywordAnalysis():
                               select_chart], 
                              layout = widgets.Layout(width='350px', height='150px'))
         
+        # exclude corpus selection for multi-corpora analysis
         if multi:
             hbox1 = widgets.HBox([vbox2])
         else:
@@ -637,11 +676,14 @@ class KeywordAnalysis():
                       sheet_name: str,
                       display_n: int = 5):
         '''
-        Function to save tagged texts into an excel spreadsheet using text_name as the sheet name
+        Function to save analysis into an excel spreadsheet and download to local computer
 
         Args:
-            start_index: the start index of the text to be saved
-            end_index: the end index of the text to be saved
+            df: the pandas dataframe containing the selected data 
+            output_dir: the name of the output directory.
+            file_name: the name of the saved file 
+            sheet_name: the sheet name of the excel spreadsheet 
+            display_n: the number of rows to display on the notebook 
         '''
         # display the first n rows in html format
         df_html = df.head(display_n).to_html(escape=False)
@@ -738,12 +780,13 @@ class KeywordAnalysis():
         Args:
             desc: description to display on the button widget
             margin: top, right, bottom and left margins for the button widget
-            width: the width of the button
+            width: the weidth of the button widget
         '''
         # widget to show the button to click
         button = widgets.Button(description=desc, 
                                 layout=Layout(margin=margin, width=width),
-                                style=dict(font_weight='bold'))
+                                style=dict(font_style='italic',
+                                           font_weight='bold'))
         
         # the output after clicking the button
         out = widgets.Output()
