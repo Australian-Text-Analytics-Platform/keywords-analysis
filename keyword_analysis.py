@@ -696,6 +696,7 @@ class KeywordAnalysis():
         # display analysis
         display(HTML(df_html))
         
+        print('Saving in progress...')
         # save analysis into an Excel spreadsheet
         values = [df.columns] + list(df.values)
         wb = Workbook()
@@ -703,6 +704,7 @@ class KeywordAnalysis():
         wb.save(output_dir + file_name)
         
         # download the file onto your computer
+        print('Saving is complete.')
         print('Click below to download:')
         display(DownloadFileLink(output_dir + file_name, file_name))
         
