@@ -541,7 +541,7 @@ class KeywordAnalysis():
                 if n==(len(inc_corpus)-1):
                     last_chart = True
                 figsize=(6.5, 3)
-                bbox_to_anchor=(1.6, 0.5)
+                bbox_to_anchor=(1.7, 0.5)
                 fig = self.visualize_stats(df, 
                                            yticks,
                                            index, 
