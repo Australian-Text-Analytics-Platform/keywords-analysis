@@ -19,6 +19,7 @@ def collapse_corpus_by_source(df):
         corpusdict[source] = bodystring + " " + titlestring
     df_counting = pd.DataFrame.from_dict(corpusdict, orient='index', columns=['text'])
     df_counting['source'] = df_counting.index
+    
     return df_counting
 
 
@@ -34,6 +35,7 @@ def count_words(df):
                                                  leave=True))
     wordcount_df = pd.DataFrame(data=np.transpose(corpustokencounts.toarray()), columns=df.source.tolist())
     wordcount_df['word'] = vectorizer.get_feature_names_out()
+    
     return wordcount_df
 
 
@@ -46,6 +48,7 @@ def get_totals(df):
     total_word_used = df.loc[:, df.columns != "word"].sum(axis=1)
     df['total_word_used'] = total_word_used # total word used (per word)
     total_words_in_corpus = sum(total_word_used)
+    
     return (df, total_by_source, total_words_in_corpus)
 
 
@@ -62,6 +65,7 @@ def get_percent_diff(normalised_wc_source, normalised_restofcorpus_wc, diff_zero
         divideby = diff_zero_freq_adjustment
     else:
         divideby = normalised_restofcorpus_wc
+        
     return 100 * (normalised_wc_source - normalised_restofcorpus_wc)/divideby
 
 
@@ -70,6 +74,7 @@ def log2_ratio(normalised_freq_source, normalised_freq_rest_of_corpus, total_wor
     log_ratio_zero_freq_adjustment = 0.5
     numerator = normalised_freq_source if normalised_freq_source != 0 else log_ratio_zero_freq_adjustment/total_words_source1
     denominator = normalised_freq_rest_of_corpus if normalised_freq_rest_of_corpus != 0 else log_ratio_zero_freq_adjustment/total_words_rest_of_corpus
+    
     return np.log2(numerator/denominator)
 
 
@@ -239,5 +244,5 @@ def test_multicorpus_compare(projectroot):
     test6_wc_only['word'] = test6['word']
     testcountdf, total_by_source_test, total_words_in_corpus_test = get_totals(df=test6_wc_only)
     multicorp_comparison_test = n_corpus_compare(df=testcountdf, total_by_source=total_by_source_test, total_words_in_corpus=total_words_in_corpus_test)
-    # the assertion passes :)
+    
     return assert_frame_equal(multicorp_comparison_test, test6)
