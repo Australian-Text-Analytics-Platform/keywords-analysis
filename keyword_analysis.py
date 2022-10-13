@@ -506,7 +506,8 @@ class KeywordAnalysis():
         inc_chart = [options[chart][0] for chart in inc_charts]
         
         if multi:
-            yticks = self.set_yticks(self.multicorp_comparison, inc_chart)
+            #yticks = self.set_yticks(self.multicorp_comparison, inc_chart)
+            yticks=None
             last_chart = True
             which_corpus = 'multi-corpus'
             figsize=(8, 4)
@@ -523,11 +524,12 @@ class KeywordAnalysis():
             plt.show()
         else:
             inc_col = [options[chart][1] for chart in inc_charts]
-            yticks = self.set_yticks(self.pairwise_compare, 
-                                     inc_chart, 
-                                     inc_corpus, 
-                                     inc_col, 
-                                     multi=False)
+            yticks=None
+            #yticks = self.set_yticks(self.pairwise_compare, 
+            #                         inc_chart, 
+            #                         inc_corpus, 
+            #                         inc_col, 
+            #                         multi=False)
             
             # display bar chart for every selected entity type
             for n, which_corpus in enumerate(inc_corpus):
