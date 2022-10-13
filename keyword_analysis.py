@@ -574,12 +574,12 @@ class KeywordAnalysis():
         
         # whether to do pairwise or multi-corpora analysis
         if multi:
-            viz_df = self.multicorp_comparison.copy()
+            viz_df = self.multicorp_comparison
             options = {'log-likelihood':[-3],
                        'bayes factor BIC':[-2],
                        'ELL':[-1]}
         else:
-            viz_df = self.pairwise_compare.copy()
+            viz_df = self.pairwise_compare
             options = {'normalised word count (corpus)':[3,'normalised_wc_'],
                        'normalised word count (rest of corpus)':[4,'normalised_restofcorpus_wc_'],
                        'log-likelihood':[6,'log_likelihood_'],
