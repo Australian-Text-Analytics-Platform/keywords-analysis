@@ -359,6 +359,9 @@ class KeywordAnalysis():
         relative risk, log ratio and odds ratio. For more information, 
         please visit this website: https://ucrel.lancs.ac.uk/llwizard.html
         '''
+        # define corpus list
+        self.corpus_options = list(set(self.text_df.source))
+        
         # collate all texts based on source and 
         # use CountVectorizer to count the number of words in each source
         self.wordcount_df = collapse_corpus_by_source(df=self.text_df)
@@ -563,13 +566,10 @@ class KeywordAnalysis():
         Args:
             multi: whether the chart is for multi-corpora analysis or not 
         '''
-        # define corpus list
-        corpus_options = list(set(self.text_df.source))
-        
         # widget to select corpus to include in the analysis
         enter_corpus, select_corpus = self.select_multiple_options('<b>Select corpus:</b>',
-                                                               corpus_options,
-                                                               corpus_options,
+                                                               self.corpus_options,
+                                                               self.corpus_options,
                                                                '150px')
         
         # whether to do pairwise or multi-corpora analysis
