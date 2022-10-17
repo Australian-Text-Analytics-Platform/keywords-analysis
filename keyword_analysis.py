@@ -423,14 +423,15 @@ class KeywordAnalysis():
         if last_chart:
             plt.xticks(rotation=90, 
                        fontsize='small')
-            fig.legend(loc='right', 
-                       bbox_to_anchor=bbox_to_anchor, 
-                       ncol=1, 
-                       fontsize='small')
         else:
             plt.xticks(ticks=range(0,40),
                        labels=['']*40)
-            fig.legend('')
+            #fig.legend('')
+            
+        fig.legend(loc='right', 
+                   bbox_to_anchor=bbox_to_anchor, 
+                   ncol=1, 
+                   fontsize='small')
             
         # define x-label and y-ticks
         plt.xlabel('')
