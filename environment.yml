@@ -17,7 +17,6 @@ dependencies:
   - scikit-learn=1.1.1
   - scipy=1.9.3
   - nltk=3.7
-  - scikit-learn
   - pip
   - pip:
     - pyexcelerate
