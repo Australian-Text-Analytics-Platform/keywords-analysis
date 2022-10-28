@@ -752,6 +752,33 @@ class KeywordAnalysis():
         for n, word in enumerate(vectorizer.get_feature_names_out()):
             self.text_df[word] = corpustokencounts.toarray()[:,n]
             self.text_df[word+'_per_1000_words'] = self.text_df[word]/self.text_df['text_len']*1000
+            
+            
+    def x_and_y(self, 
+                word: str, 
+                source_1: str, 
+                source_2: str,
+                d_trans: float):
+        '''
+        Function to calculate x and y for histogram and statistical analysis
+        
+        Args:
+            word:  the 'word' to analyse
+            source_1: the first corpus to be compared
+            source_2: the second corpus to be compared
+            d_trans: data transformation to perform
+        '''
+        x = self.text_df[self.text_df['source']==source_1][word+'_per_1000_words']
+        y = self.text_df[self.text_df['source']==source_2][word+'_per_1000_words']
+        
+        # exclude zero values (articles where the word did not appear in them)
+        x = x[x!=0]
+        y = y[y!=0] 
+        
+        x = boxcox(x, d_trans)
+        y = boxcox(y, d_trans)
+        
+        return x, y
     
     
     def welch_t_test(self, x, y, alt: str = 'two-sided'):
@@ -821,9 +848,9 @@ class KeywordAnalysis():
         # use matplotlib to plot histogram of data distribution
         plt.hist(x, bins='auto', alpha=0.5, label=source_1)
         plt.hist(y, bins='auto', alpha=0.5, label=source_2)
-        plt.title("word '{}' distribution in {} vs. {}".format(word, source_1, source_2))
+        plt.title("Word '{}' distribution in {} vs. {}".format(word, source_1, source_2))
         plt.ylabel('number of articles')
-        plt.xlabel('{} word frequency per 1,000 words'.format(d_trans))
+        plt.xlabel('{}(word frequency per 1,000 words)'.format(d_trans))
         plt.legend(bbox_to_anchor=(1.3, 1))
         plt.show()
     
@@ -909,19 +936,13 @@ class KeywordAnalysis():
                 
                 # generate histogram as per selections
                 try:
-                    self.word_count(word.value)
+                    # perform word count
+                    self.word_count(w)
                     
-                    x = self.text_df[self.text_df['source']==s1][w+'_per_1000_words']
-                    y = self.text_df[self.text_df['source']==s2][w+'_per_1000_words']
+                    # define x and y for histogram
+                    x, y = self.x_and_y(w, s1, s2, data_transform[trans][0])
                     
-                    # exclude zero values (articles where the word did not appear in them)
-                    x = x[x!=0]
-                    y = y[y!=0] 
-                    
-                    x = boxcox(x, data_transform[trans][0])
-                    y = boxcox(y, data_transform[trans][0])
-                    
-                    
+                    # plot the histogram
                     self.plot_histogram(x, y, w, s1, s2, data_transform[trans][1])
                 
                 # exception if the selected word does not exist in both corpora
@@ -952,22 +973,19 @@ class KeywordAnalysis():
                 
                 # generate statistic as per selections
                 try:
+                    # perform word count
                     self.word_count(w)
                     
-                    x = self.text_df[self.text_df['source']==s1][w+'_per_1000_words']
-                    y = self.text_df[self.text_df['source']==s2][w+'_per_1000_words']
+                    # define x and y for statistical analysis
+                    x, y = self.x_and_y(w, s1, s2, data_transform[trans][0])
                     
-                    # exclude zero values (articles where the word did not appear in them)
-                    x = x[x!=0]
-                    y = y[y!=0] 
-                    
-                    x = boxcox(x, data_transform[trans][0])
-                    y = boxcox(y, data_transform[trans][0])
-                    
+                    # perform statisitical test
                     if which_stat=='Welch t-test':
                         stat, pvalue = self.welch_t_test(x, y)
                     else:
                         stat, pvalue = self.fisher_permutation_test(x, y)
+                    
+                    # print the output and analysis
                     print('\033[1m{}\033[0m'.format(which_stat))
                     print('Statistic score: {:.2f}'.format(stat))
                     print('p-value: {:.2f}'.format(pvalue))
