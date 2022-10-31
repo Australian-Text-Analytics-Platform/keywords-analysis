@@ -425,7 +425,7 @@ class KeywordAnalysis():
         plt.title(title)
         
         # define the data
-        data = df.iloc[index:index+40,inc_chart]
+        data = df.iloc[index:index+30,inc_chart]
         
         # create the line chart
         fig = sns.lineplot(data=data, palette="tab10", linewidth=2.5)
@@ -433,16 +433,16 @@ class KeywordAnalysis():
         # if last chart include words in the x-ticks + legend on the right
         if last_chart:
             plt.xticks(rotation=90, 
-                       fontsize='small')
+                       fontsize='medium')
         else:
-            plt.xticks(ticks=range(0,40),
-                       labels=['']*40)
+            plt.xticks(ticks=range(0,30),
+                       labels=['']*30)
             #fig.legend('')
             
         fig.legend(loc='right', 
                    bbox_to_anchor=bbox_to_anchor, 
                    ncol=1, 
-                   fontsize='small')
+                   fontsize='medium')
             
         # define x-label and y-ticks
         plt.xlabel('')
@@ -525,7 +525,7 @@ class KeywordAnalysis():
             yticks=None
             last_chart = True
             which_corpus = 'multi-corpus'
-            figsize=(8, 4)
+            figsize=(10, 4)
             bbox_to_anchor=(1.3, 0.5)
             fig = self.visualize_stats(viz_df, 
                                        yticks,
@@ -555,8 +555,8 @@ class KeywordAnalysis():
                 last_chart = False
                 if n==(len(inc_corpus)-1):
                     last_chart = True
-                figsize=(8, 3)
-                bbox_to_anchor=(1.7, 0.5)
+                figsize=(10, 3.5)
+                bbox_to_anchor=(1.52, 0.5)
                 fig = self.visualize_stats(df, 
                                            yticks,
                                            index, 
@@ -616,7 +616,7 @@ class KeywordAnalysis():
         
         # selection slider to select words in the corpus
         display_index = widgets.SelectionSlider(
-            options=self.all_words[:-40],
+            options=self.all_words[:-30],
             value=self.all_words[0],
             description='First word:',
             disabled=False,
