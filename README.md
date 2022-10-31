@@ -43,7 +43,7 @@ In this notebook, you can also use statistical tests (Welch t-test or Fisher per
 
 <img width='740' src='./img/fisher_test.png'/>  
 
-You can also see the distribution of a particular word on a histogram to see how often it is used.  
+You can also see the distribution of that word on a histogram to see how often it is used.  
 
 <img width='500' src='./img/dist_plot.png'/>   
 
