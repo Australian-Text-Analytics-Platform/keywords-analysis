@@ -24,6 +24,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # nltk: natural language processing toolkit
+import nltk
+nltk.download('punkt')
 from nltk.tokenize import word_tokenize
 
 # scikit-learn: machine learning tool
