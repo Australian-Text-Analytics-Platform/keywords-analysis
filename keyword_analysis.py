@@ -650,6 +650,7 @@ class KeywordAnalysis():
                 # clear output and get word index
                 clear_output()
                 index=0
+                display_index.value=self.all_words[0]
                 
                 # display updated charts
                 self.create_graphs(viz_df, 
