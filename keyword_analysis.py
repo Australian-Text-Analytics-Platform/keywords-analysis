@@ -600,6 +600,7 @@ class KeywordAnalysis():
                        'relative risk':[10,'relative_risk_'],
                        'log ratio':[11,'log_ratio_'],
                        'odds ratio':[12,'odds_ratio_']}
+            
         # set the words as the index of the dataframe
         viz_df.set_index('word', inplace=True)
             
