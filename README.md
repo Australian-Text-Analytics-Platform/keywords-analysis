@@ -38,6 +38,15 @@ You also have the option to save your analysis onto an excel spreadsheet and dow
 
 <img width='740' src='./img/table_1.png'/>  
 
+## Welch t-test and Fisher permutation test
+In this notebook, you can also use statistical tests (Welch t-test or Fisher permutation test) to investigate if the use of a certain word in a corpus is statistically different to the use of that same word in a different corpus.  
+
+<img width='740' src='./img/fisher_test.png'/>  
+
+You can also see the distribution of a particular word on a histogram to see how often it is used.  
+
+<img width='500' src='./img/dist_plot.png'/>   
+
 ## Reference
 The statistical calculations used in this tool are python implementation of the statistical calculation on this [website](https://ucrel.lancs.ac.uk/llwizard.html).
 
