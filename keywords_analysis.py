@@ -74,7 +74,7 @@ class DownloadFileLink(FileLink):
         )
         
 
-class KeywordAnalysis():
+class KeywordsAnalysis():
     '''
     Using word statistics to analyse words in a collection of corpus 
     and identify whether certain words are over or under-represented 
@@ -83,11 +83,13 @@ class KeywordAnalysis():
     '''
     def __init__(self):
         '''
-        Initiate the KeywordAnalysis
+        Initiate the KeywordsAnalysis
         '''
         # initiate other necessary variables
         self.large_file_size = 1000000
         self.text_df = pd.DataFrame()
+        self.new_display = True
+        self.figs = []
         
         # create input and output folders if not already exist
         os.makedirs('input', exist_ok=True)
@@ -429,23 +431,28 @@ class KeywordAnalysis():
         
         # create the line chart
         fig = sns.lineplot(data=data, palette="tab10", linewidth=2.5)
-        
+        '''
         # if last chart include words in the x-ticks + legend on the right
         if last_chart:
-            plt.xticks(rotation=90, 
-                       fontsize='medium')
+            plt.xlabel('words, index {} to {}'.format(index, index+29))
+            #plt.xticks(rotation=90, 
+            #           fontsize='medium')
         else:
-            plt.xticks(ticks=range(0,30),
-                       labels=['']*30)
-            #fig.legend('')
-            
+            plt.xlabel('')
+            #plt.xticks(ticks=range(0,30),
+            #           labels=['']*30)
+            #fig.legend('')'''
+        plt.xlabel('words, index {} to {}'.format(index, index+29))
+        plt.xticks(rotation=90, 
+                   fontsize='medium')
+        
         fig.legend(loc='right', 
                    bbox_to_anchor=bbox_to_anchor, 
                    ncol=1, 
                    fontsize='medium')
             
         # define x-label and y-ticks
-        plt.xlabel('')
+        plt.ylabel('statistic values')
         #plt.yticks(yticks)
         
         return fig
@@ -506,6 +513,7 @@ class KeywordAnalysis():
                       inc_corpus: list, 
                       inc_charts: list, 
                       options: dict(), 
+                      sort_value: str,
                       multi: bool):
         '''
         Function to generate line charts based on selected parameters
@@ -516,27 +524,38 @@ class KeywordAnalysis():
             inc_corpus: the list of corpus to be included in the chart 
             inc_charts: the list of statistics to be included in the chart 
             options: the dictionary containing the statistic options to display 
+            sort_value: how to sort the statistics
             multi: whether the chart is for multi-corpora analysis or not 
         '''
         inc_chart = [options[chart][0] for chart in inc_charts]
+        
+        figs = []
         
         if multi:
             #yticks = self.set_yticks(self.multicorp_comparison, inc_chart)
             yticks=None
             last_chart = True
             which_corpus = 'multi-corpus'
+            
+            if sort_value!='alphabetically':
+                viz_df = viz_df.sort_values(by=options[sort_value][1], 
+                                    ascending=False)
+            
+            fig_title = '{}, sort by: {}'.format(which_corpus, sort_value)
+                
             figsize=(10, 4)
             bbox_to_anchor=(1.3, 0.5)
             fig = self.visualize_stats(viz_df, 
                                        yticks,
                                        index, 
                                        inc_chart, 
-                                       which_corpus, 
+                                       fig_title, 
                                        last_chart,
                                        figsize, 
                                        bbox_to_anchor,
                                        multi)
             plt.show()
+            figs.append([fig, fig_title])
         else:
             inc_col = [options[chart][1] for chart in inc_charts]
             yticks=None
@@ -551,22 +570,30 @@ class KeywordAnalysis():
                 selected_corpus = [column for column in viz_df.columns.to_list() \
                                    if which_corpus in column]
                 df = viz_df.loc[:,selected_corpus]
+                if sort_value!='alphabetically':
+                    df = df.sort_values(by=options[sort_value][1]+selected_corpus[0], 
+                                        ascending=False)
                 
                 last_chart = False
                 if n==(len(inc_corpus)-1):
                     last_chart = True
+                    
+                fig_title = 'Study corpus: {}, sort by: {}'.format(which_corpus, sort_value)
                 figsize=(10, 3.5)
                 bbox_to_anchor=(1.54, 0.5)
                 fig = self.visualize_stats(df, 
                                            yticks,
                                            index, 
                                            inc_chart, 
-                                           which_corpus, 
+                                           fig_title, 
                                            last_chart, 
                                            figsize, 
                                            bbox_to_anchor,
                                            multi)
                 plt.show()
+                figs.append([fig, fig_title])
+        
+        return figs
         
     def analyse_stats(
             self, 
@@ -578,6 +605,7 @@ class KeywordAnalysis():
         Args:
             multi: whether the chart is for multi-corpora analysis or not 
         '''
+        self.figs = []
         # widget to select corpus to include in the analysis
         enter_corpus, select_corpus = self.select_multiple_options('<b>Select corpus:</b>',
                                                                self.corpus_options,
@@ -587,13 +615,13 @@ class KeywordAnalysis():
         # whether to do pairwise or multi-corpora analysis
         if multi:
             viz_df = self.multicorp_comparison
-            options = {'log-likelihood':[-3],
-                       'bayes factor BIC':[-2],
-                       'ELL':[-1]}
+            options = {'log-likelihood':[-3, 'Log Likelihood'],
+                       'bayes factor BIC':[-2, 'Bayes Factor BIC'],
+                       'ELL':[-1, 'ELL']}
         else:
             viz_df = self.pairwise_compare
-            options = {'normalised word count (corpus)':[3,'normalised_wc_'],
-                       'normalised word count (rest of corpus)':[4,'normalised_restofcorpus_wc_'],
+            options = {'normalised word count (study corpus)':[3,'normalised_wc_'],
+                       'normalised word count (reference corpus)':[4,'normalised_reference_corpus_wc_'],
                        'log-likelihood':[6,'log_likelihood_'],
                        'bayes factor BIC':[8,'bayes_factor_bic_'],
                        'ELL':[9,'ell_'],
@@ -608,18 +636,24 @@ class KeywordAnalysis():
         enter_chart, select_chart = self.select_multiple_options('<b>Select statistic(s) to display):</b>',
                                                                list(options.keys()),
                                                                list(options.keys()),
-                                                               '250px')
+                                                               '230px')
+        
+        # widgets to select how to sort the data
+        sort_options = ['alphabetically'] + list(options.keys())
+        enter_sort, select_sort = self.select_options(instruction='<b>Sort by:</b>',
+                                                      options=sort_options,
+                                                      value='alphabetically')
         
         # widget to display analysis
         display_button, display_out = self.click_button_widget(desc='Display chart',
-                                                       margin='0px 35px 0px 0px',
+                                                       margin='0px 30px 0px 0px',
                                                        width='152px')
         
         # selection slider to select words in the corpus
         display_index = widgets.SelectionSlider(
-            options=self.all_words[:-30],
-            value=self.all_words[0],
-            description='First word:',
+            options=list(range(0,len(self.all_words[:-30]))),#self.all_words[:-30],
+            value=0,#self.all_words[0],
+            description='Index:',
             disabled=False,
             continuous_update=False,
             orientation='horizontal',
@@ -630,17 +664,25 @@ class KeywordAnalysis():
         # update charts when the slider is moved
         def _cb(change):
             with display_out:
-                # clear output and get word index
-                clear_output(wait=False)
-                index= self.all_words.index(display_index.value)
-                
-                # display updated charts
-                self.create_graphs(viz_df, 
-                                   index, 
-                                   select_corpus.value, 
-                                   select_chart.value, 
-                                   options, 
-                                   multi)
+                if not(display_index.value==0 and self.new_display==False):
+                    # clear output and get word index
+                    clear_output()
+                    index= display_index.value#self.all_words.index(display_index.value)
+                    
+                    # display updated charts
+                    self.figs = self.create_graphs(viz_df, 
+                                              index, 
+                                              select_corpus.value, 
+                                              select_chart.value, 
+                                              options, 
+                                              select_sort.value, 
+                                              multi)
+                    self.new_display=False
+                    print('self.new_display move:',self.new_display)
+                    print('display_index.value:',display_index.value)
+            
+            with save_out:
+                clear_output()
         
         # observe when selection slider is moved
         display_index.observe(_cb, names='value')
@@ -651,36 +693,72 @@ class KeywordAnalysis():
                 # clear output and get word index
                 clear_output()
                 index=0
-                display_index.value=self.all_words[0]
+                display_index.value=0#self.all_words[0]
+                self.new_display=True
                 
                 # display updated charts
-                self.create_graphs(viz_df, 
-                                   index, 
-                                   select_corpus.value, 
-                                   select_chart.value, 
-                                   options, 
-                                   multi)
-        
+                self.figs = self.create_graphs(viz_df, 
+                                          index, 
+                                          select_corpus.value, 
+                                          select_chart.value, 
+                                          options, 
+                                          select_sort.value, 
+                                          multi)
+            with save_out:
+                clear_output()
+                
         # link the display button with the function
         display_button.on_click(on_display_button_clicked)
+        
+        # widget to save the above
+        save_button, save_out = self.click_button_widget(desc='Save chart', 
+                                                         margin='0px 0px 0px 0px',
+                                                         width='155px')
+        
+        # function to define what happens when the save button is clicked
+        def on_save_button_clicked(_):
+            with save_out:
+                clear_output()
+                if self.figs!=[]:
+                    # set the output folder for saving
+                    out_dir='./output/'
+                    
+                    print('Analysis saved! Click below to download:')
+                    # save the bar charts as jpg files
+                    for fig, fig_title in self.figs:
+                        file_name = '{}.jpg'.format('_'.join(fig_title.split()))
+                        fig.figure.savefig(out_dir+file_name, bbox_inches='tight')
+                        display(DownloadFileLink(out_dir+file_name, file_name))
+                    
+                    # reset placeholder for saving bar charts
+                    self.figs = []
+                else:
+                    print('You need to generate the bar charts before you can save them!')
+        
+        # link the save_button with the function
+        save_button.on_click(on_save_button_clicked)
         
         # displaying inputs, buttons and their outputs
         vbox1 = widgets.VBox([enter_corpus,
                               select_corpus], 
-                             layout = widgets.Layout(width='200px', height='150px'))
+                             layout = widgets.Layout(width='180px', height='150px'))
         vbox2 = widgets.VBox([enter_chart, 
                               select_chart], 
-                             layout = widgets.Layout(width='350px', height='150px'))
+                             layout = widgets.Layout(width='260px', height='150px'))
+        
+        vbox3 = widgets.VBox([enter_sort, 
+                              select_sort], 
+                             layout = widgets.Layout(width='250px', height='150px'))
         
         # exclude corpus selection for multi-corpora analysis
         if multi:
-            hbox1 = widgets.HBox([vbox2])
+            hbox1 = widgets.HBox([vbox2, vbox3])
         else:
-            hbox1 = widgets.HBox([vbox1, vbox2])
+            hbox1 = widgets.HBox([vbox1, vbox2, vbox3])
             
-        hbox2 = widgets.HBox([display_button, display_index])
+        hbox2 = widgets.HBox([display_button, save_button, display_index])
         
-        vbox = widgets.VBox([hbox1, hbox2, display_out])
+        vbox = widgets.VBox([hbox1, hbox2, save_out, display_out])
         
         return vbox
     
