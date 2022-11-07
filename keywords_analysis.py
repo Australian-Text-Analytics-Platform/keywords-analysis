@@ -541,7 +541,7 @@ class KeywordsAnalysis():
                 viz_df = viz_df.sort_values(by=options[sort_value][1], 
                                     ascending=False)
             
-            fig_title = '{}, sort by: {}'.format(which_corpus, sort_value)
+            fig_title = '{}, sorted by: {}'.format(which_corpus, sort_value)
                 
             figsize=(10, 4)
             bbox_to_anchor=(1.3, 0.5)
@@ -578,7 +578,7 @@ class KeywordsAnalysis():
                 if n==(len(inc_corpus)-1):
                     last_chart = True
                     
-                fig_title = 'Study corpus: {}, sort by: {}'.format(which_corpus, sort_value)
+                fig_title = 'Study corpus: {}, sorted by: {}'.format(which_corpus, sort_value)
                 figsize=(10, 3.5)
                 bbox_to_anchor=(1.54, 0.5)
                 fig = self.visualize_stats(df, 
@@ -640,7 +640,7 @@ class KeywordsAnalysis():
         
         # widgets to select how to sort the data
         sort_options = ['alphabetically'] + list(options.keys())
-        enter_sort, select_sort = self.select_options(instruction='<b>Sort by:</b>',
+        enter_sort, select_sort = self.select_options(instruction='<b>Sorted by:</b>',
                                                       options=sort_options,
                                                       value='alphabetically')
         
