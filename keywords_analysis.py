@@ -614,12 +614,12 @@ class KeywordsAnalysis():
         
         # whether to do pairwise or multi-corpora analysis
         if multi:
-            viz_df = self.multicorp_comparison
+            viz_df = self.multicorp_comparison.copy()
             options = {'log-likelihood':[-3, 'Log Likelihood'],
                        'bayes factor BIC':[-2, 'Bayes Factor BIC'],
                        'ELL':[-1, 'ELL']}
         else:
-            viz_df = self.pairwise_compare
+            viz_df = self.pairwise_compare.copy()
             options = {'normalised word count (study corpus)':[3,'normalised_wc_'],
                        'normalised word count (reference corpus)':[4,'normalised_reference_corpus_wc_'],
                        'log-likelihood':[6,'log_likelihood_'],
@@ -648,7 +648,7 @@ class KeywordsAnalysis():
         display_button, display_out = self.click_button_widget(desc='Display chart',
                                                        margin='0px 30px 0px 0px',
                                                        width='152px')
-        
+        '''
         # selection slider to select words in the corpus
         display_index = widgets.SelectionSlider(
             options=list(range(0,len(self.all_words[:-30]))),#self.all_words[:-30],
@@ -658,8 +658,14 @@ class KeywordsAnalysis():
             continuous_update=False,
             orientation='horizontal',
             readout=True,
-            layout = widgets.Layout(width='280px')
-        )
+            layout = widgets.Layout(width='500px')
+        )'''
+        
+        
+        enter_index, display_index = self.select_n_widget('<b>Select index:</b>', 
+                                                          value=0,
+                                                          min_value=0,
+                                                          max_value=len(self.all_words[:-20]))
         
         # update charts when the slider is moved
         def _cb(change):
@@ -742,12 +748,15 @@ class KeywordsAnalysis():
         vbox1 = widgets.VBox([enter_corpus,
                               select_corpus], 
                              layout = widgets.Layout(width='180px', height='150px'))
+        
         vbox2 = widgets.VBox([enter_chart, 
                               select_chart], 
                              layout = widgets.Layout(width='260px', height='150px'))
         
         vbox3 = widgets.VBox([enter_sort, 
-                              select_sort], 
+                              select_sort,
+                              enter_index, 
+                              display_index], 
                              layout = widgets.Layout(width='250px', height='150px'))
         
         # exclude corpus selection for multi-corpora analysis
@@ -756,7 +765,7 @@ class KeywordsAnalysis():
         else:
             hbox1 = widgets.HBox([vbox1, vbox2, vbox3])
             
-        hbox2 = widgets.HBox([display_button, save_button, display_index])
+        hbox2 = widgets.HBox([display_button, save_button])#, display_index])
         
         vbox = widgets.VBox([hbox1, hbox2, save_out, display_out])
         
@@ -1264,3 +1273,38 @@ class KeywordsAnalysis():
         out = widgets.Output()
         
         return button, out
+    
+    
+    def select_n_widget(self, 
+                        instruction: str, 
+                        value: int,
+                        min_value: int,
+                        max_value: int):
+        '''
+        Create widgets for selecting the number of entities to display
+        
+        Args:
+            instruction: text instruction for user
+            value: initial value of the widget
+            min_value: the minimum value of the widget
+            max_value: the maximum value of the widget
+        '''
+        # widget to display instruction
+        enter_n = widgets.HTML(
+            value=instruction,
+            placeholder='',
+            description=''
+            )
+        
+        # widgets for selecting n
+        n_option = widgets.BoundedIntText(
+            value=value,
+            min=min_value,
+            max=max_value,
+            step=10,
+            description='',
+            disabled=False,
+            layout = widgets.Layout(width='180px')
+        )
+        
+        return enter_n, n_option
