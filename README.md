@@ -32,7 +32,7 @@ This tool will allow you upload text data in a text file (or a number of text fi
 ## Calculate Word Statistics
 Once your texts have been uploaded, you can begin to calculate the statistics for the words in the corpus. You can then visualise the statistics on the charts (as shown below).  
 
-<img width='500' src='./img/pairwise.png'/>  
+<img width='740' src='./img/pairwise.png'/>  
 
 You also have the option to save your analysis onto an excel spreadsheet and download it to your local computer.  
 
