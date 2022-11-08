@@ -452,11 +452,11 @@ class KeywordsAnalysis():
         p.xaxis.axis_line_width = 5
         
         # define other chart parameters
-        p.xaxis.axis_label_text_font_size = '16px'
-        p.yaxis.axis_label_text_font_size = '16px'
+        p.xaxis.axis_label_text_font_size = '15px'
+        p.yaxis.axis_label_text_font_size = '15px'
         p.xaxis.major_label_text_font_size = '14px'
         p.yaxis.major_label_text_font_size = '14px'
-        p.xaxis.axis_label = 'words, index {} to {}'.format(str(index), str(index+30))
+        p.xaxis.axis_label = 'Word tokens, index {} to {}'.format(str(index), str(index+30))
         p.yaxis.axis_label = 'statistic values'
         if multi:
             p.x_range.range_padding = 0.6
