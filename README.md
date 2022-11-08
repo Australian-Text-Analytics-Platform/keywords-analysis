@@ -1,6 +1,6 @@
-# Keyword Analysis
+# Keywords Analysis
 
-<b>Abstract:</b> in this notebook, you will use the KeywordAnalysis tool to analyse words in a collection of corpus and identify whether certain words are over or under-represented in a particular corpus compared to their representation in other corpus.  
+<b>Abstract:</b> in this notebook, you will use the KeywordsAnalysis tool to analyse words in a collection of corpus and identify whether certain words are over or under-represented in a particular corpus compared to their representation in other corpus.  
 
 ## Setup
 This tool has been designed for use with minimal setup from users. You are able to run it in the cloud and any dependencies with other packages will be installed for you automatically. In order to launch and use the tool, you just need to click the below icon.
