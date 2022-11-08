@@ -21,7 +21,12 @@ import numpy as np
 
 # matplotlib and seaborn: visualization tools
 import matplotlib.pyplot as plt
-import seaborn as sns
+
+# Bokeh: interactive plots
+from bokeh.io import output_notebook
+from bokeh.models import FixedTicker
+from bokeh.plotting import figure, show
+output_notebook()
 
 # nltk: natural language processing toolkit
 import nltk
@@ -74,7 +79,7 @@ class DownloadFileLink(FileLink):
         )
         
 
-class KeywordAnalysis():
+class KeywordsAnalysis():
     '''
     Using word statistics to analyse words in a collection of corpus 
     and identify whether certain words are over or under-represented 
@@ -83,11 +88,12 @@ class KeywordAnalysis():
     '''
     def __init__(self):
         '''
-        Initiate the KeywordAnalysis
+        Initiate the KeywordsAnalysis
         '''
         # initiate other necessary variables
         self.large_file_size = 1000000
         self.text_df = pd.DataFrame()
+        self.new_display = True
         
         # create input and output folders if not already exist
         os.makedirs('input', exist_ok=True)
@@ -396,109 +402,70 @@ class KeywordAnalysis():
         
     def visualize_stats(self, 
                         df: pd.DataFrame, 
-                        yticks,
                         index: int, 
                         inc_chart: list, 
                         title: str, 
-                        last_chart: bool, 
-                        figsize: tuple, 
-                        bbox_to_anchor: tuple,
                         multi: bool = False):
         '''
         Function to visualize the calculated statistics onto a line chart
 
         Args:
             df: the pandas dataframe containing the selected data 
-            yticks: the calculated yticks for the line chart 
             index: the index of the first word 
             inc_chart: the list of statistics to be included in the chart 
             title: the title of the chart, 
-            last_chart: whether it is the last chart or not, 
-            figsize: the size of the chart, 
-            bbox_to_anchor: the location of the legend box,
             multi: whether the chart is for multi-corpora analysis or not
         '''
-        # define the parameters for the chart
-        plt.figure(figsize=figsize)
-        sns.set_theme(style="whitegrid")
-        plt.margins(x=0.025, tight=True)
-        plt.title(title)
+        # define line color and line dash options
+        line_colors = {0: 'tomato', 1: 'indigo',
+                       2: 'coral', 3: 'firebrick',
+                       4: '#a240a2', 5: '#2F2F2F',
+                       6: 'olivedrab', 7: 'green'}
+        line_dashes = {0:'solid', 1: 'dotted', 
+                       2: 'dashed', 3: 'dotdash',
+                       4: 'dashdot', 5: 'dotted', 
+                       6: 'dashed', 7: 'dotdash'}
         
         # define the data
         data = df.iloc[index:index+30,inc_chart]
         
         # create the line chart
-        fig = sns.lineplot(data=data, palette="tab10", linewidth=2.5)
-        
-        # if last chart include words in the x-ticks + legend on the right
-        if last_chart:
-            plt.xticks(rotation=90, 
-                       fontsize='medium')
-        else:
-            plt.xticks(ticks=range(0,30),
-                       labels=['']*30)
-            #fig.legend('')
-            
-        fig.legend(loc='right', 
-                   bbox_to_anchor=bbox_to_anchor, 
-                   ncol=1, 
-                   fontsize='medium')
-            
-        # define x-label and y-ticks
-        plt.xlabel('')
-        #plt.yticks(yticks)
-        
-        return fig
-    
-    
-    def set_yticks(self, 
-                   df: pd.DataFrame, 
-                   inc_chart: list, 
-                   inc_corpus: list = None, 
-                   inc_col: list = None, 
-                   multi: bool = True):
-        '''
-        Function to calculate the minimum and maximum values for the y-ticks
-        and generate a numpy array for the y-ticks
+        x = list(range(0, len(data)))
 
-        Args:
-            df: the pandas dataframe containing the selected data 
-            inc_chart: the list of statistics to be included in the chart 
-            inc_corpus: the list of corpus to be included in the chart 
-            inc_col: the list of columns to be included in the chart
-            multi: whether the chart is for multi-corpora analysis or not
-        '''
-        # create placeholders for minimum and maximum values
-        max_values = []; min_values = []
+        p = figure(title=title,
+                   background_fill_color="#fafafa",
+                   plot_width=900,#900, 
+                   plot_height=400)
         
-        # define the minimum and maximum values baed on the data
+        for n, column in enumerate(data.columns.to_list()):
+            p.line(x, data[column], legend_label=column,
+                   line_color=line_colors[n], 
+                   line_dash=line_dashes[n],
+                   line_width=2)
+        
+        # define the x-ticks
+        word_list = data.index.to_list()
+        word_list = [word[:20] for word in word_list]
+        p.xaxis.ticker = FixedTicker(ticks=list(range(0, len(x))))
+        p.xaxis.major_label_overrides = dict(zip(x, word_list))
+        p.xaxis.major_label_orientation = 45
+        p.xaxis.axis_line_width = 5
+        
+        # define other chart parameters
+        p.xaxis.axis_label_text_font_size = '15px'
+        p.yaxis.axis_label_text_font_size = '15px'
+        p.xaxis.major_label_text_font_size = '14px'
+        p.yaxis.major_label_text_font_size = '14px'
+        p.xaxis.axis_label = 'word tokens, index {} to {}'.format(str(index), str(index+30))
+        p.yaxis.axis_label = 'statistic values'
         if multi:
-            for chart in inc_chart:
-                max_values.append(max(df.iloc[:,chart].to_list()))
-                min_values.append(min(df.iloc[:,chart].to_list()))
+            p.x_range.range_padding = 0.6
         else:
-            for corpus in inc_corpus:
-                for col in inc_col:
-                    max_values.append(max(df[col+corpus].to_list()))
-                    min_values.append(min(df[col+corpus].to_list()))
-        max_value = max(round(max(max_values),0),0.05)
-        min_value = min(round(min(min_values),0),-0.05)
+            p.x_range.range_padding = 1.3
+        p.x_range.start=-1
+        p.legend.click_policy = 'hide'
+        show(p)
         
-        # generate y-ticks based on calculated minimum and maximum values
-        if not(max_value<1 and min_value>-1):
-            if max_value%5!=0:
-                max_value=(max_value//5+1)*5
-            if min_value%5!=0:
-                if min_value>0:
-                    min_value=(min_value//5+1)*5
-                else:
-                    min_value=((min_value//5))*5
-            yticks=np.linspace(int(min_value), int(max_value), int((max_value-min_value)/5+1))
-        else:
-            yticks=np.linspace(min_value, max_value, 5)
-        
-        return yticks
-    
     
     def create_graphs(self, 
                       viz_df: pd.DataFrame, 
@@ -506,6 +473,7 @@ class KeywordAnalysis():
                       inc_corpus: list, 
                       inc_charts: list, 
                       options: dict(), 
+                      sort_value: str,
                       multi: bool):
         '''
         Function to generate line charts based on selected parameters
@@ -516,57 +484,42 @@ class KeywordAnalysis():
             inc_corpus: the list of corpus to be included in the chart 
             inc_charts: the list of statistics to be included in the chart 
             options: the dictionary containing the statistic options to display 
+            sort_value: how to sort the statistics
             multi: whether the chart is for multi-corpora analysis or not 
         '''
         inc_chart = [options[chart][0] for chart in inc_charts]
         
         if multi:
-            #yticks = self.set_yticks(self.multicorp_comparison, inc_chart)
-            yticks=None
-            last_chart = True
             which_corpus = 'multi-corpus'
-            figsize=(10, 4)
-            bbox_to_anchor=(1.3, 0.5)
-            fig = self.visualize_stats(viz_df, 
-                                       yticks,
-                                       index, 
-                                       inc_chart, 
-                                       which_corpus, 
-                                       last_chart,
-                                       figsize, 
-                                       bbox_to_anchor,
-                                       multi)
-            plt.show()
-        else:
-            inc_col = [options[chart][1] for chart in inc_charts]
-            yticks=None
-            #yticks = self.set_yticks(self.pairwise_compare, 
-            #                         inc_chart, 
-            #                         inc_corpus, 
-            #                         inc_col, 
-            #                         multi=False)
             
+            if sort_value!='alphabetically':
+                viz_df = viz_df.sort_values(by=options[sort_value][1], 
+                                    ascending=False)
+            
+            fig_title = '{}, sorted by: {}'.format(which_corpus, sort_value)
+                
+            self.visualize_stats(viz_df, 
+                                 index, 
+                                       inc_chart, 
+                                       fig_title, 
+                                       multi)
+        else:
             # display bar chart for every selected entity type
             for n, which_corpus in enumerate(inc_corpus):
                 selected_corpus = [column for column in viz_df.columns.to_list() \
                                    if which_corpus in column]
                 df = viz_df.loc[:,selected_corpus]
+                if sort_value!='alphabetically':
+                    df = df.sort_values(by=options[sort_value][1]+selected_corpus[0], 
+                                        ascending=False)
                 
-                last_chart = False
-                if n==(len(inc_corpus)-1):
-                    last_chart = True
-                figsize=(10, 3.5)
-                bbox_to_anchor=(1.54, 0.5)
-                fig = self.visualize_stats(df, 
-                                           yticks,
-                                           index, 
-                                           inc_chart, 
-                                           which_corpus, 
-                                           last_chart, 
-                                           figsize, 
-                                           bbox_to_anchor,
-                                           multi)
-                plt.show()
+                fig_title = 'Study corpus: {}, sorted by: {}'.format(which_corpus, sort_value)
+                self.visualize_stats(df, 
+                                     index, 
+                                     inc_chart, 
+                                     fig_title, 
+                                     multi)
+        
         
     def analyse_stats(
             self, 
@@ -578,6 +531,7 @@ class KeywordAnalysis():
         Args:
             multi: whether the chart is for multi-corpora analysis or not 
         '''
+        self.figs = []
         # widget to select corpus to include in the analysis
         enter_corpus, select_corpus = self.select_multiple_options('<b>Select corpus:</b>',
                                                                self.corpus_options,
@@ -586,14 +540,14 @@ class KeywordAnalysis():
         
         # whether to do pairwise or multi-corpora analysis
         if multi:
-            viz_df = self.multicorp_comparison
-            options = {'log-likelihood':[-3],
-                       'bayes factor BIC':[-2],
-                       'ELL':[-1]}
+            viz_df = self.multicorp_comparison.copy()
+            options = {'log-likelihood':[-3, 'Log Likelihood'],
+                       'bayes factor BIC':[-2, 'Bayes Factor BIC'],
+                       'ELL':[-1, 'ELL']}
         else:
-            viz_df = self.pairwise_compare
-            options = {'normalised word count (corpus)':[3,'normalised_wc_'],
-                       'normalised word count (rest of corpus)':[4,'normalised_restofcorpus_wc_'],
+            viz_df = self.pairwise_compare.copy()
+            options = {'normalised word count (study corpus)':[3,'normalised_wc_'],
+                       'normalised word count (reference corpus)':[4,'normalised_reference_corpus_wc_'],
                        'log-likelihood':[6,'log_likelihood_'],
                        'bayes factor BIC':[8,'bayes_factor_bic_'],
                        'ELL':[9,'ell_'],
@@ -608,39 +562,43 @@ class KeywordAnalysis():
         enter_chart, select_chart = self.select_multiple_options('<b>Select statistic(s) to display):</b>',
                                                                list(options.keys()),
                                                                list(options.keys()),
-                                                               '250px')
+                                                               '230px')
+        
+        # widgets to select how to sort the data
+        sort_options = ['alphabetically'] + list(options.keys())
+        enter_sort, select_sort = self.select_options(instruction='<b>Sorted by:</b>',
+                                                      options=sort_options,
+                                                      value='alphabetically')
         
         # widget to display analysis
         display_button, display_out = self.click_button_widget(desc='Display chart',
-                                                       margin='0px 35px 0px 0px',
-                                                       width='152px')
+                                                       margin='10px 32px 0px 2px',
+                                                       width='180px')
         
-        # selection slider to select words in the corpus
-        display_index = widgets.SelectionSlider(
-            options=self.all_words[:-30],
-            value=self.all_words[0],
-            description='First word:',
-            disabled=False,
-            continuous_update=False,
-            orientation='horizontal',
-            readout=True,
-            layout = widgets.Layout(width='280px')
-        )
+        enter_index, display_index = self.select_n_widget('<b>Select index:</b>', 
+                                                          value=0,
+                                                          min_value=0,
+                                                          max_value=len(self.all_words[:-20]))
         
         # update charts when the slider is moved
         def _cb(change):
             with display_out:
-                # clear output and get word index
-                clear_output(wait=False)
-                index= self.all_words.index(display_index.value)
-                
-                # display updated charts
-                self.create_graphs(viz_df, 
-                                   index, 
-                                   select_corpus.value, 
-                                   select_chart.value, 
-                                   options, 
-                                   multi)
+                if not(display_index.value==0 and self.new_display==False):
+                    # clear output and get word index
+                    clear_output()
+                    index= display_index.value#self.all_words.index(display_index.value)
+                    
+                    # display updated charts
+                    self.create_graphs(viz_df, 
+                                       index, 
+                                       select_corpus.value, 
+                                       select_chart.value, 
+                                       options, 
+                                       select_sort.value, 
+                                       multi)
+                    self.new_display=False
+                    print('self.new_display move:',self.new_display)
+                    print('display_index.value:',display_index.value)
         
         # observe when selection slider is moved
         display_index.observe(_cb, names='value')
@@ -651,7 +609,8 @@ class KeywordAnalysis():
                 # clear output and get word index
                 clear_output()
                 index=0
-                display_index.value=self.all_words[0]
+                display_index.value=0#self.all_words[0]
+                self.new_display=True
                 
                 # display updated charts
                 self.create_graphs(viz_df, 
@@ -659,28 +618,38 @@ class KeywordAnalysis():
                                    select_corpus.value, 
                                    select_chart.value, 
                                    options, 
+                                   select_sort.value, 
                                    multi)
-        
+                
         # link the display button with the function
         display_button.on_click(on_display_button_clicked)
         
         # displaying inputs, buttons and their outputs
         vbox1 = widgets.VBox([enter_corpus,
                               select_corpus], 
-                             layout = widgets.Layout(width='200px', height='150px'))
+                             layout = widgets.Layout(width='180px', height='150px'))
+        
         vbox2 = widgets.VBox([enter_chart, 
                               select_chart], 
-                             layout = widgets.Layout(width='350px', height='150px'))
+                             layout = widgets.Layout(width='260px', height='150px'))
+        
+        vbox3 = widgets.VBox([enter_sort, 
+                              select_sort,
+                              enter_index, 
+                              display_index,
+                              display_button], 
+                             layout = widgets.Layout(width='250px', height='200px'))
         
         # exclude corpus selection for multi-corpora analysis
         if multi:
-            hbox1 = widgets.HBox([vbox2])
+            hbox1 = widgets.HBox([vbox2, vbox3])
         else:
-            hbox1 = widgets.HBox([vbox1, vbox2])
+            hbox1 = widgets.HBox([vbox1, vbox2, vbox3])
             
-        hbox2 = widgets.HBox([display_button, display_index])
+        #hbox2 = widgets.HBox([display_button])
         
-        vbox = widgets.VBox([hbox1, hbox2, display_out])
+        #vbox = widgets.VBox([hbox1, hbox2, display_out])
+        vbox = widgets.VBox([hbox1, display_out])
         
         return vbox
     
@@ -909,7 +878,7 @@ class KeywordAnalysis():
         enter_stat, select_stat = self.select_options(instruction='Select statistical test:',
                                                       options=['Welch t-test',
                                                                'Fisher Permutation test'],
-                                                      value='Welch t-test')
+                                                      value='Fisher Permutation test')
         
         # widgets to select confidence interval (disabled for now)
         enter_conf, select_conf = self.select_options(instruction='Select confidence level:',
@@ -1186,3 +1155,38 @@ class KeywordAnalysis():
         out = widgets.Output()
         
         return button, out
+    
+    
+    def select_n_widget(self, 
+                        instruction: str, 
+                        value: int,
+                        min_value: int,
+                        max_value: int):
+        '''
+        Create widgets for selecting the number of entities to display
+        
+        Args:
+            instruction: text instruction for user
+            value: initial value of the widget
+            min_value: the minimum value of the widget
+            max_value: the maximum value of the widget
+        '''
+        # widget to display instruction
+        enter_n = widgets.HTML(
+            value=instruction,
+            placeholder='',
+            description=''
+            )
+        
+        # widgets for selecting n
+        n_option = widgets.BoundedIntText(
+            value=value,
+            min=min_value,
+            max=max_value,
+            step=10,
+            description='',
+            disabled=False,
+            layout = widgets.Layout(width='180px')
+        )
+        
+        return enter_n, n_option
