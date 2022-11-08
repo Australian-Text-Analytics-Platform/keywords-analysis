@@ -456,7 +456,7 @@ class KeywordsAnalysis():
         p.yaxis.axis_label_text_font_size = '15px'
         p.xaxis.major_label_text_font_size = '14px'
         p.yaxis.major_label_text_font_size = '14px'
-        p.xaxis.axis_label = 'Word tokens, index {} to {}'.format(str(index), str(index+30))
+        p.xaxis.axis_label = 'word tokens, index {} to {}'.format(str(index), str(index+30))
         p.yaxis.axis_label = 'statistic values'
         if multi:
             p.x_range.range_padding = 0.6
@@ -878,7 +878,7 @@ class KeywordsAnalysis():
         enter_stat, select_stat = self.select_options(instruction='Select statistical test:',
                                                       options=['Welch t-test',
                                                                'Fisher Permutation test'],
-                                                      value='Welch t-test')
+                                                      value='Fisher Permutation test')
         
         # widgets to select confidence interval (disabled for now)
         enter_conf, select_conf = self.select_options(instruction='Select confidence level:',
