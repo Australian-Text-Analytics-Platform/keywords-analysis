@@ -405,6 +405,7 @@ class KeywordsAnalysis():
                         index: int, 
                         inc_chart: list, 
                         title: str, 
+                        right_padding: float,
                         multi: bool = False):
         '''
         Function to visualize the calculated statistics onto a line chart
@@ -413,7 +414,8 @@ class KeywordsAnalysis():
             df: the pandas dataframe containing the selected data 
             index: the index of the first word 
             inc_chart: the list of statistics to be included in the chart 
-            title: the title of the chart, 
+            title: the title of the chart 
+            right_padding: padding for the legend box on the right hand side
             multi: whether the chart is for multi-corpora analysis or not
         '''
         # define line color and line dash options
@@ -434,7 +436,7 @@ class KeywordsAnalysis():
 
         p = figure(title=title,
                    background_fill_color="#fafafa",
-                   plot_width=900,#900, 
+                   plot_width=950,#900, 
                    plot_height=400)
         
         for n, column in enumerate(data.columns.to_list()):
@@ -458,10 +460,7 @@ class KeywordsAnalysis():
         p.yaxis.major_label_text_font_size = '14px'
         p.xaxis.axis_label = 'word tokens, index {} to {}'.format(str(index), str(index+30))
         p.yaxis.axis_label = 'statistic values'
-        if multi:
-            p.x_range.range_padding = 0.6
-        else:
-            p.x_range.range_padding = 1.3
+        p.x_range.range_padding = right_padding
         p.x_range.start=-1
         p.legend.click_policy = 'hide'
         show(p)
@@ -474,6 +473,7 @@ class KeywordsAnalysis():
                       inc_charts: list, 
                       options: dict(), 
                       sort_value: str,
+                      right_padding: float,
                       multi: bool):
         '''
         Function to generate line charts based on selected parameters
@@ -484,7 +484,8 @@ class KeywordsAnalysis():
             inc_corpus: the list of corpus to be included in the chart 
             inc_charts: the list of statistics to be included in the chart 
             options: the dictionary containing the statistic options to display 
-            sort_value: how to sort the statistics
+            sort_value: how to sort the statistics 
+            right_padding: padding for the legend box on the right hand side 
             multi: whether the chart is for multi-corpora analysis or not 
         '''
         inc_chart = [options[chart][0] for chart in inc_charts]
@@ -500,9 +501,10 @@ class KeywordsAnalysis():
                 
             self.visualize_stats(viz_df, 
                                  index, 
-                                       inc_chart, 
-                                       fig_title, 
-                                       multi)
+                                 inc_chart, 
+                                 fig_title, 
+                                 right_padding,
+                                 multi)
         else:
             # display bar chart for every selected entity type
             for n, which_corpus in enumerate(inc_corpus):
@@ -518,17 +520,20 @@ class KeywordsAnalysis():
                                      index, 
                                      inc_chart, 
                                      fig_title, 
+                                     right_padding,
                                      multi)
         
         
     def analyse_stats(
             self, 
+            right_padding: float,
             multi: bool = False
             ):
         '''
         Function to generate widgets for analysing calculated statistics
 
         Args:
+            range_padding: padding for the legend box on the right hand side 
             multi: whether the chart is for multi-corpora analysis or not 
         '''
         self.figs = []
@@ -595,6 +600,7 @@ class KeywordsAnalysis():
                                        select_chart.value, 
                                        options, 
                                        select_sort.value, 
+                                       right_padding, 
                                        multi)
                     self.new_display=False
                     print('self.new_display move:',self.new_display)
@@ -619,6 +625,7 @@ class KeywordsAnalysis():
                                    select_chart.value, 
                                    options, 
                                    select_sort.value, 
+                                   right_padding, 
                                    multi)
                 
         # link the display button with the function
@@ -646,9 +653,6 @@ class KeywordsAnalysis():
         else:
             hbox1 = widgets.HBox([vbox1, vbox2, vbox3])
             
-        #hbox2 = widgets.HBox([display_button])
-        
-        #vbox = widgets.VBox([hbox1, hbox2, display_out])
         vbox = widgets.VBox([hbox1, display_out])
         
         return vbox
