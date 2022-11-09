@@ -549,6 +549,7 @@ class KeywordsAnalysis():
             options = {'log-likelihood':[-3, 'Log Likelihood'],
                        'bayes factor BIC':[-2, 'Bayes Factor BIC'],
                        'ELL':[-1, 'ELL']}
+            select_chart_value = list(options.keys())
         else:
             viz_df = self.pairwise_compare.copy()
             options = {'normalised word count (study corpus)':[3,'normalised_wc_'],
@@ -559,6 +560,7 @@ class KeywordsAnalysis():
                        'relative risk':[10,'relative_risk_'],
                        'log ratio':[11,'log_ratio_'],
                        'odds ratio':[12,'odds_ratio_']}
+            select_chart_value = list(options.keys())[2:]
             
         # set the words as the index of the dataframe
         viz_df.set_index('word', inplace=True)
@@ -566,14 +568,14 @@ class KeywordsAnalysis():
         # widget to select statistics to be included in the line chart
         enter_chart, select_chart = self.select_multiple_options('<b>Select statistic(s) to display):</b>',
                                                                list(options.keys()),
-                                                               list(options.keys()),
+                                                               select_chart_value,
                                                                '230px')
         
         # widgets to select how to sort the data
         sort_options = ['alphabetically'] + list(options.keys())
         enter_sort, select_sort = self.select_options(instruction='<b>Sorted by:</b>',
                                                       options=sort_options,
-                                                      value='alphabetically')
+                                                      value='log-likelihood')
         
         # widget to display analysis
         display_button, display_out = self.click_button_widget(desc='Display chart',
