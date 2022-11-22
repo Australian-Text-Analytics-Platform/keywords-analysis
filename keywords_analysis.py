@@ -739,7 +739,7 @@ class KeywordsAnalysis():
             ds:  the data in pandas Series format
         '''
         if len(ds)==1:
-            ds = ds.append(pd.Series([0]))
+            ds = pd.concat([ds,pd.Series([0])])
         
         return ds
     
