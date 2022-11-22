@@ -11,7 +11,7 @@ This tool has been designed for use with minimal setup from users. You are able 
 
 If you do not have access to any of the above accounts, you can use the below link to access the tool (this is a free Binder version, limited to 2GB memory only).   
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/keywords_analysis?labpath=keywords_analysis.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)
 
 It may take a few minutes for Binder to launch the notebook and install the dependencies for the tool. Please be patient.  
 
