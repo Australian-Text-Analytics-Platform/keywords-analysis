@@ -124,34 +124,35 @@ class KeywordsAnalysis():
         # give notification when file is uploaded
         def _cb(change):
             with self.upload_out:
-                # clear output and give notification that file is being uploaded
-                clear_output()
-                
-                # check file size
-                self.check_file_size(self.file_uploader)
-                
-                # reading uploaded files
-                self.process_upload()
+                if self.file_uploader.value!=():
+                    # clear output and give notification that file is being uploaded
+                    clear_output()
+                    
+                    # check file size
+                    self.check_file_size(self.file_uploader)
+                    
+                    # reading uploaded files
+                    self.process_upload()
+                    
+                    # give notification when uploading is finished
+                    print('Finished uploading files.')
+                    file_name = self.corpus_name.value
+                    if file_name!='':
+                        print('{} text documents are loaded in corpus {}.'.format(self.text_df.shape[0], 
+                                                                                  file_name))
+                    else:
+                        print('{} text documents are loaded.'.format(self.text_df.shape[0]))
+                    
+                    self.corpus_name.value = ''
+                    self.corpus_name.placeholder='Enter corpus name...'
+                    print('\nYou can now upload your next corpus, or continue to the next step')
                 
                 # clear saved value in cache and reset counter
-                self.file_uploader._counter=0
-                self.file_uploader.value.clear()
+                self.file_uploader.value = ()
                 
-                # give notification when uploading is finished
-                print('Finished uploading files.')
-                file_name = self.corpus_name.value
-                if file_name!='':
-                    print('{} text documents are loaded in corpus {}.'.format(self.text_df.shape[0], 
-                                                                              file_name))
-                else:
-                    print('{} text documents are loaded.'.format(self.text_df.shape[0]))
                 
-                self.corpus_name.value = ''
-                self.corpus_name.placeholder='Enter corpus name...'
-                print('\nYou can now upload your next corpus, or continue to the next step')
-            
         # observe when file is uploaded and display output
-        self.file_uploader.observe(_cb, names='data')
+        self.file_uploader.observe(_cb, names='value')
         self.upload_box = widgets.VBox([self.corpus_name, 
                                         self.file_uploader, 
                                         self.upload_out])
@@ -194,21 +195,21 @@ class KeywordsAnalysis():
         """
         
         
-    def check_file_size(self, file):
+    def check_file_size(self, uploaded_file):
         '''
         Function to check the uploaded file size
         
         Args:
-            file: the uploaded file containing the text data
+            uploaded_file: the uploaded file containing the text data
         '''
         # check total uploaded file size
-        total_file_size = sum([i['metadata']['size'] for i in self.file_uploader.value.values()])
+        total_file_size = sum([file['size'] for file in uploaded_file.value])
         print('The total size of the upload is {:.2f} MB.'.format(total_file_size/1000000))
         
         # display warning for individual large files (>1MB)
-        large_text = [text['metadata']['name'] for text in self.file_uploader.value.values() \
-                      if text['metadata']['size']>self.large_file_size and \
-                          text['metadata']['name'].endswith('.txt')]
+        large_text = [file['name'] for file in uploaded_file.value \
+                      if file['size']>self.large_file_size and \
+                          file['name'].endswith('.txt')]
         if len(large_text)>0:
             print('The following file(s) are larger than 1MB:', large_text)
         
@@ -220,38 +221,44 @@ class KeywordsAnalysis():
         Args:
             zip_file: the file containing the zipped data
         '''
+        # create an input folder if not already exist
+        os.makedirs('input', exist_ok=True)
+        
         # read and decode the zip file
         temp = io.BytesIO(zip_file['content'])
         
         # open and extract the zip file
         with ZipFile(temp, 'r') as zip:
             # extract files
-            print('Extracting {}...'.format(zip_file['metadata']['name']))
+            print('Extracting {}...'.format(zip_file['name']))
             zip.extractall('./input/')
         
         # clear up temp
         temp = None
     
     
-    def load_txt(self, file) -> list:
+    def load_txt(self, file, n) -> list:
         '''
         Load individual txt file content and return a dictionary object, 
         wrapped in a list so it can be merged with list of pervious file contents.
         
         Args:
             file: the file containing the text data
+            n: index of the uploaded file (value='unzip' if the file is extracted form a zip file
         '''
-        try:
+        # read the unzip text file
+        if n=='unzip':
             # read the unzip text file
             with open(file) as f:
                 temp = {'text_name': file.name[:-4],
                         'text': f.read()
                 }
+            
             os.remove(file)
-        except:
-            file = self.file_uploader.value[file]
+        else:
+            file = self.file_uploader.value[n]
             # read and decode uploaded text
-            temp = {'text_name': file['metadata']['name'][:-4],
+            temp = {'text_name': file['name'][:-4],
                     'text': codecs.decode(file['content'], encoding='utf-8', errors='replace')
             }
             
@@ -263,31 +270,26 @@ class KeywordsAnalysis():
         return [temp]
 
 
-    def load_table(self, file) -> list:
+    def load_table(self, file, n) -> list:
         '''
         Load csv or xlsx file
         
         Args:
             file: the file containing the excel or csv data
+            n: index of the uploaded file (value='unzip' if the file is extracted form a zip file
         '''
-        if type(file)==str:
-            file = self.file_uploader.value[file]['content']
-
+        if n!='unzip':
+            file = io.BytesIO(self.file_uploader.value[n]['content'])
+            
         # read the file based on the file format
         try:
             temp_df = pd.read_csv(file)
         except:
             temp_df = pd.read_excel(file)
-        
-        # remove file from directory
-        if type(file)!=bytes:
-            os.remove(file)
             
         # check if the column text and text_name present in the table, if not, skip the current spreadsheet
-        if ('text' not in temp_df.columns) \
-            or ('text_name' not in temp_df.columns) \
-                or ('source' not in temp_df.columns):
-            print('File {} does not contain the required header "text", "text_name" and "source"'.format(file['metadata']['name']))
+        if ('text' not in temp_df.columns) or ('text_name' not in temp_df.columns):
+            print('File {} does not contain the required header "text" and "text_name"'.format(file['metadata']['name']))
             return []
         
         # return a list of dict objects
@@ -303,7 +305,6 @@ class KeywordsAnalysis():
         Args:
             temp_df: the temporary pandas dataframe containing the text data
         '''
-        #temp_df['text_id'] = temp_df['text'].apply(lambda t: hashlib.md5(t.encode('utf-8')).hexdigest())
         temp_df['text_id'] = temp_df['text'].apply(
             lambda t: hashlib.shake_256(t.encode('utf-8')).hexdigest(5))
         
@@ -318,35 +319,32 @@ class KeywordsAnalysis():
             deduplication: option to deduplicate text_df by text_id
         '''
         # create placeholders to store all texts and zipped file names
-        all_data = []; zip_files = []
+        all_data = []; files = []
         
         # read and store the uploaded files
-        files = list(self.file_uploader.value.keys())
+        uploaded_files = self.file_uploader.value
         
         # extract zip files (if any)
-        for file in files:
-            if file.lower().endswith('zip'):
-                self.extract_zip(self.file_uploader.value[file])
-                zip_files.append(file)
-        
-        # remove zip files from the list
-        files = list(set(files)-set(zip_files))
+        for n, file in enumerate(uploaded_files):
+            files.append([file.name, n])
+            if file.name.lower().endswith('zip'):
+                self.extract_zip(self.file_uploader.value[n])
+                files.pop()
         
         # add extracted files to files
         for file_type in ['*.txt', '*.xlsx', '*.csv']:
-            files += [file for file in Path('./input').rglob(file_type) if 'MACOSX' not in str(file)]
+            files += [[file, 'unzip'] for file in Path('./input').rglob(file_type) if 'MACOSX' not in str(file)]
         
         print('Reading uploaded files...')
         print('This may take a while...')
         # process and upload files
-        for file in tqdm(files):
+        for file, n in tqdm(files):
             # process text files
             if str(file).lower().endswith('txt'):
-                text_dic = self.load_txt(file)
-                    
+                text_dic = self.load_txt(file, n)
             # process xlsx or csv files
             else:
-                text_dic = self.load_table(file)
+                text_dic = self.load_table(file, n)
             all_data.extend(text_dic)
         
         # remove files and directory once finished
@@ -359,7 +357,7 @@ class KeywordsAnalysis():
         temp_df = self.hash_gen(temp_df)
         
         # clear up all_data
-        all_data = []; zip_files = []
+        all_data = []; files = []
         
         self.text_df = pd.concat([self.text_df,temp_df])
 
@@ -733,6 +731,19 @@ class KeywordsAnalysis():
             self.text_df[word+'_per_1000_words'] = self.text_df[word]/self.text_df['text_len']*1000
             
             
+    def check_length(self, ds: pd.Series):
+        '''
+        Function to check the length of the data
+        
+        Args:
+            ds:  the data in pandas Series format
+        '''
+        if len(ds)==1:
+            ds = ds.append(pd.Series([0]))
+        
+        return ds
+    
+    
     def x_and_y(self, 
                 word: str, 
                 source_1: str, 
@@ -752,10 +763,13 @@ class KeywordsAnalysis():
         
         # exclude zero values (articles where the word did not appear in them)
         x = x[x!=0]
-        y = y[y!=0] 
+        y = y[y!=0]
         
         x = boxcox(x, d_trans)
         y = boxcox(y, d_trans)
+        
+        x = self.check_length(x)
+        y = self.check_length(y)
         
         return x, y
     
@@ -830,7 +844,7 @@ class KeywordsAnalysis():
         plt.title("Word '{}' distribution in {} vs. {}".format(word, source_1, source_2))
         plt.ylabel('number of articles')
         plt.xlabel('{}(word frequency per 1,000 words)'.format(d_trans))
-        plt.legend(bbox_to_anchor=(1.3, 1))
+        plt.legend(bbox_to_anchor=(1.5, 1))
         plt.show()
     
     
@@ -951,38 +965,38 @@ class KeywordsAnalysis():
                 conf_level = select_conf.value
                 
                 # generate statistic as per selections
-                try:
-                    # perform word count
-                    self.word_count(w)
-                    
-                    # define x and y for statistical analysis
-                    x, y = self.x_and_y(w, s1, s2, data_transform[trans][0])
-                    
-                    # perform statisitical test
-                    if which_stat=='Welch t-test':
-                        stat, pvalue = self.welch_t_test(x, y)
-                    else:
-                        stat, pvalue = self.fisher_permutation_test(x, y)
-                    
-                    # print the output and analysis
-                    print('\033[1m{}\033[0m'.format(which_stat))
-                    print('Statistic score: {:.2f}'.format(stat))
-                    print('p-value: {:.2f}'.format(pvalue))
-                    print()
-                    if stat>0: 
-                        print("The mean frequency of the word '{}' is higher in '{}' than in '{}',".format(w, s1, s2))
-                    else: 
-                        print("The mean frequency of the word '{}' is lower in '{}' than in '{}',".format(w, s1, s2))
-                    if pvalue<(1-int(conf_level.strip('%'))/100): 
-                        print('and we consider the difference to be statistically significant.')
-                        print("\nIn summary, we reject the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
-                    else: 
-                        print('but the difference is not statistically significant.')
-                        print("\nIn summary, we accept the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
+                #try:
+                # perform word count
+                self.word_count(w)
+                
+                # define x and y for statistical analysis
+                x, y = self.x_and_y(w, s1, s2, data_transform[trans][0])
+                
+                # perform statisitical test
+                if which_stat=='Welch t-test':
+                    stat, pvalue = self.welch_t_test(x, y)
+                else:
+                    stat, pvalue = self.fisher_permutation_test(x, y)
+                
+                # print the output and analysis
+                print('\033[1m{}\033[0m'.format(which_stat))
+                print('Statistic score: {:.2f}'.format(stat))
+                print('p-value: {:.2f}'.format(pvalue))
+                print()
+                if stat>0: 
+                    print("The mean frequency of the word '{}' is higher in '{}' than in '{}',".format(w, s1, s2))
+                else: 
+                    print("The mean frequency of the word '{}' is lower in '{}' than in '{}',".format(w, s1, s2))
+                if pvalue<(1-int(conf_level.strip('%'))/100): 
+                    print('and we consider the difference to be statistically significant.')
+                    print("\nIn summary, we reject the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
+                else: 
+                    print('but the difference is not statistically significant.')
+                    print("\nIn summary, we accept the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
                 
                 # exception if the selected word does not exist in both corpora
-                except:
-                    print("The word '{}' does not exist in the selected corpora.".format(w))
+                #except:
+                #    print("The word '{}' does not exist in the selected corpora.".format(w))
         
         # link the stat button with the function
         stat_button.on_click(on_stat_button_clicked)
