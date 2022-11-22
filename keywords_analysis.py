@@ -965,38 +965,38 @@ class KeywordsAnalysis():
                 conf_level = select_conf.value
                 
                 # generate statistic as per selections
-                #try:
-                # perform word count
-                self.word_count(w)
-                
-                # define x and y for statistical analysis
-                x, y = self.x_and_y(w, s1, s2, data_transform[trans][0])
-                
-                # perform statisitical test
-                if which_stat=='Welch t-test':
-                    stat, pvalue = self.welch_t_test(x, y)
-                else:
-                    stat, pvalue = self.fisher_permutation_test(x, y)
-                
-                # print the output and analysis
-                print('\033[1m{}\033[0m'.format(which_stat))
-                print('Statistic score: {:.2f}'.format(stat))
-                print('p-value: {:.2f}'.format(pvalue))
-                print()
-                if stat>0: 
-                    print("The mean frequency of the word '{}' is higher in '{}' than in '{}',".format(w, s1, s2))
-                else: 
-                    print("The mean frequency of the word '{}' is lower in '{}' than in '{}',".format(w, s1, s2))
-                if pvalue<(1-int(conf_level.strip('%'))/100): 
-                    print('and we consider the difference to be statistically significant.')
-                    print("\nIn summary, we reject the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
-                else: 
-                    print('but the difference is not statistically significant.')
-                    print("\nIn summary, we accept the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
+                try:
+                    # perform word count
+                    self.word_count(w)
+                    
+                    # define x and y for statistical analysis
+                    x, y = self.x_and_y(w, s1, s2, data_transform[trans][0])
+                    
+                    # perform statisitical test
+                    if which_stat=='Welch t-test':
+                        stat, pvalue = self.welch_t_test(x, y)
+                    else:
+                        stat, pvalue = self.fisher_permutation_test(x, y)
+                    
+                    # print the output and analysis
+                    print('\033[1m{}\033[0m'.format(which_stat))
+                    print('Statistic score: {:.2f}'.format(stat))
+                    print('p-value: {:.2f}'.format(pvalue))
+                    print()
+                    if stat>0: 
+                        print("The mean frequency of the word '{}' is higher in '{}' than in '{}',".format(w, s1, s2))
+                    else: 
+                        print("The mean frequency of the word '{}' is lower in '{}' than in '{}',".format(w, s1, s2))
+                    if pvalue<(1-int(conf_level.strip('%'))/100): 
+                        print('and we consider the difference to be statistically significant.')
+                        print("\nIn summary, we reject the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
+                    else: 
+                        print('but the difference is not statistically significant.')
+                        print("\nIn summary, we accept the null hypothesis that use of the word '{}' in '{}' is equal to that in '{}'.".format(w, s1, s2))
                 
                 # exception if the selected word does not exist in both corpora
-                #except:
-                #    print("The word '{}' does not exist in the selected corpora.".format(w))
+                except:
+                    print("The word '{}' does not exist in the selected corpora.".format(w))
         
         # link the stat button with the function
         stat_button.on_click(on_stat_button_clicked)
