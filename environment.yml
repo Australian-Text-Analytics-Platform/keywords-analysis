@@ -13,7 +13,7 @@ dependencies:
   - numpy=1.23.1
   - matplotlib=3.5.2
   - seaborn=0.11.2
-  - ipywidgets=7.6.5
+  - ipywidgets=8.0.2
   - scikit-learn=1.1.1
   - scipy=1.9.3
   - nltk=3.7
