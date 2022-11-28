@@ -265,7 +265,7 @@ class KeywordsAnalysis():
             # check for unknown characters and display warning if any
             unknown_count = temp['text'].count('�')
             if unknown_count>0:
-                print('We identified {} unknown character(s) in the following text: {}'.format(unknown_count, file['metadata']['name'][:-4]))
+                print('We identified {} unknown character(s) in the following text: {}'.format(unknown_count, file['name'][:-4]))
         
         return [temp]
 
@@ -287,9 +287,10 @@ class KeywordsAnalysis():
         except:
             temp_df = pd.read_excel(file)
             
+        
         # check if the column text and text_name present in the table, if not, skip the current spreadsheet
         if ('text' not in temp_df.columns) or ('text_name' not in temp_df.columns):
-            print('File {} does not contain the required header "text" and "text_name"'.format(file['metadata']['name']))
+            print('File {} does not contain the required header "text" and "text_name"'.format(self.file_uploader.value[n]['name']))
             return []
         
         # return a list of dict objects
@@ -350,20 +351,25 @@ class KeywordsAnalysis():
         # remove files and directory once finished
         os.system('rm -r ./input')
         
-        # convert them into a pandas dataframe format and add unique id
-        temp_df = pd.DataFrame.from_dict(all_data)
-        if 'source' not in temp_df.columns:
-            temp_df['source'] = len(temp_df) * [self.corpus_name.value]
-        temp_df = self.hash_gen(temp_df)
-        
-        # clear up all_data
-        all_data = []; files = []
-        
-        self.text_df = pd.concat([self.text_df,temp_df])
-
-        # deduplicate the text_df by text_id
-        if deduplication:
-            self.text_df.drop_duplicates(subset='text_id', keep='first', inplace=True)
+        try:
+            # convert them into a pandas dataframe format and add unique id
+            temp_df = pd.DataFrame.from_dict(all_data)
+            
+            if 'source' not in temp_df.columns:
+                temp_df['source'] = len(temp_df) * [self.corpus_name.value]
+                
+            temp_df = self.hash_gen(temp_df)
+            
+            # clear up all_data
+            all_data = []; files = []
+            
+            self.text_df = pd.concat([self.text_df,temp_df])
+    
+            # deduplicate the text_df by text_id
+            if deduplication:
+                self.text_df.drop_duplicates(subset='text_id', keep='first', inplace=True)
+        except:
+            print('File upload unsuccessful. Please try again.')
         
     
     def calculate_word_statistics(self):
