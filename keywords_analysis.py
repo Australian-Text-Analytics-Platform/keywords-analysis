@@ -720,7 +720,7 @@ class KeywordsAnalysis():
         else:
             hbox1 = widgets.HBox([vbox1, vbox2, vbox3, vbox4])
             
-        vbox = widgets.VBox([hbox1, save_out, display_out])
+        vbox = widgets.VBox([hbox1, display_out, save_out])
         
         return vbox
     
