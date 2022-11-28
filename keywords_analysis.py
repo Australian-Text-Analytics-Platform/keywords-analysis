@@ -265,7 +265,7 @@ class KeywordsAnalysis():
             # check for unknown characters and display warning if any
             unknown_count = temp['text'].count('�')
             if unknown_count>0:
-                print('We identified {} unknown character(s) in the following text: {}'.format(unknown_count, file['metadata']['name'][:-4]))
+                print('We identified {} unknown character(s) in the following text: {}'.format(unknown_count, file['name'][:-4]))
         
         return [temp]
 
@@ -287,9 +287,10 @@ class KeywordsAnalysis():
         except:
             temp_df = pd.read_excel(file)
             
+        
         # check if the column text and text_name present in the table, if not, skip the current spreadsheet
         if ('text' not in temp_df.columns) or ('text_name' not in temp_df.columns):
-            print('File {} does not contain the required header "text" and "text_name"'.format(file['metadata']['name']))
+            print('File {} does not contain the required header "text" and "text_name"'.format(self.file_uploader.value[n]['name']))
             return []
         
         # return a list of dict objects
@@ -350,20 +351,25 @@ class KeywordsAnalysis():
         # remove files and directory once finished
         os.system('rm -r ./input')
         
-        # convert them into a pandas dataframe format and add unique id
-        temp_df = pd.DataFrame.from_dict(all_data)
-        if 'source' not in temp_df.columns:
-            temp_df['source'] = len(temp_df) * [self.corpus_name.value]
-        temp_df = self.hash_gen(temp_df)
-        
-        # clear up all_data
-        all_data = []; files = []
-        
-        self.text_df = pd.concat([self.text_df,temp_df])
-
-        # deduplicate the text_df by text_id
-        if deduplication:
-            self.text_df.drop_duplicates(subset='text_id', keep='first', inplace=True)
+        try:
+            # convert them into a pandas dataframe format and add unique id
+            temp_df = pd.DataFrame.from_dict(all_data)
+            
+            if 'source' not in temp_df.columns:
+                temp_df['source'] = len(temp_df) * [self.corpus_name.value]
+                
+            temp_df = self.hash_gen(temp_df)
+            
+            # clear up all_data
+            all_data = []; files = []
+            
+            self.text_df = pd.concat([self.text_df,temp_df])
+    
+            # deduplicate the text_df by text_id
+            if deduplication:
+                self.text_df.drop_duplicates(subset='text_id', keep='first', inplace=True)
+        except:
+            print('File upload unsuccessful. Please try again.')
         
     
     def calculate_word_statistics(self):
@@ -383,19 +389,14 @@ class KeywordsAnalysis():
         self.wordcount_df = count_words(df=self.wordcount_df)
         
         # get total word counts based on source and overall in the corpus
-        self.wordcount_df, total_by_source, total_words_in_corpus = get_totals(df=self.wordcount_df)
-        
-        # pairwise comparison between a particular corpus vs the rest of the corpus
-        self.pairwise_compare = two_corpus_compare(self.wordcount_df, 
-                                                   total_by_source, 
-                                                   total_words_in_corpus)
-        
-        self.all_words = self.pairwise_compare.word.to_list()
+        self.wordcount_df, self.total_by_source, self.total_words_in_corpus = get_totals(df=self.wordcount_df)
         
         # multi-corpora analysis
         self.multicorp_comparison = n_corpus_compare(self.wordcount_df, 
-                                                     total_by_source, 
-                                                     total_words_in_corpus)
+                                                     self.total_by_source, 
+                                                     self.total_words_in_corpus)
+        
+        self.all_words = self.multicorp_comparison.word.to_list()
         
         
     def visualize_stats(self, 
@@ -467,7 +468,8 @@ class KeywordsAnalysis():
     def create_graphs(self, 
                       viz_df: pd.DataFrame, 
                       index: int, 
-                      inc_corpus: list, 
+                      inc_corpus1: str, 
+                      inc_corpus2: str, 
                       inc_charts: list, 
                       options: dict(), 
                       sort_value: str,
@@ -504,22 +506,21 @@ class KeywordsAnalysis():
                                  right_padding,
                                  multi)
         else:
-            # display bar chart for every selected entity type
-            for n, which_corpus in enumerate(inc_corpus):
-                selected_corpus = [column for column in viz_df.columns.to_list() \
-                                   if which_corpus in column]
-                df = viz_df.loc[:,selected_corpus]
-                if sort_value!='alphabetically':
-                    df = df.sort_values(by=options[sort_value][1]+selected_corpus[0], 
-                                        ascending=False)
-                
-                fig_title = 'Study corpus: {}, sorted by: {}'.format(which_corpus, sort_value)
-                self.visualize_stats(df, 
-                                     index, 
-                                     inc_chart, 
-                                     fig_title, 
-                                     right_padding,
-                                     multi)
+            df = viz_df
+            
+            if sort_value!='alphabetically':
+                df = df.sort_values(by=options[sort_value][1],
+                                    ascending=False)
+            
+            fig_title = 'Study corpus: {}; reference corpus: {}; sorted by: {}'.format(inc_corpus1, 
+                                                                                       inc_corpus2,
+                                                                                       sort_value)
+            self.visualize_stats(df, 
+                                 index, 
+                                 inc_chart, 
+                                 fig_title, 
+                                 right_padding,
+                                 multi)
         
         
     def analyse_stats(
@@ -535,33 +536,34 @@ class KeywordsAnalysis():
             multi: whether the chart is for multi-corpora analysis or not 
         '''
         self.figs = []
-        # widget to select corpus to include in the analysis
-        enter_corpus, select_corpus = self.select_multiple_options('<b>Select corpus:</b>',
-                                                               self.corpus_options,
-                                                               self.corpus_options,
-                                                               '150px')
+        # widget to select study corpus to include in the analysis
+        enter_corpus, select_corpus = self.select_options('<b>Select study corpus:</b>',
+                                                          self.corpus_options,
+                                                          self.corpus_options[0], 
+                                                          '150px')
         
+        # widget to select reference corpus to include in the analysis
+        enter_ref_corpus, select_ref_corpus = self.select_options('<b>Select reference corpus:</b>',
+                                                                  self.corpus_options+['rest of corpus'],
+                                                                  'rest of corpus', 
+                                                                  '150px')
+            
         # whether to do pairwise or multi-corpora analysis
         if multi:
-            viz_df = self.multicorp_comparison.copy()
             options = {'log-likelihood':[-3, 'Log Likelihood'],
                        'bayes factor BIC':[-2, 'Bayes Factor BIC'],
                        'ELL':[-1, 'ELL']}
             select_chart_value = list(options.keys())
         else:
-            viz_df = self.pairwise_compare.copy()
-            options = {'normalised word count (study corpus)':[3,'normalised_wc_'],
-                       'normalised word count (reference corpus)':[4,'normalised_reference_corpus_wc_'],
-                       'log-likelihood':[6,'log_likelihood_'],
-                       'bayes factor BIC':[8,'bayes_factor_bic_'],
-                       'ELL':[9,'ell_'],
-                       'relative risk':[10,'relative_risk_'],
-                       'log ratio':[11,'log_ratio_'],
-                       'odds ratio':[12,'odds_ratio_']}
+            options = {'normalised word count (study corpus)':[-10,'normalised_study_corpus_wc'],
+                       'normalised word count (reference corpus)':[-9,'normalised_reference_corpus_wc'],
+                       'log-likelihood':[-7,'log_likelihood'],
+                       'bayes factor BIC':[-5,'bayes_factor_bic'],
+                       'ELL':[-4,'ell'],
+                       'relative risk':[-3,'relative_risk'],
+                       'log ratio':[-2,'log_ratio'],
+                       'odds ratio':[-1,'odds_ratio']}
             select_chart_value = list(options.keys())[2:]
-            
-        # set the words as the index of the dataframe
-        viz_df.set_index('word', inplace=True)
             
         # widget to select statistics to be included in the line chart
         enter_chart, select_chart = self.select_multiple_options('<b>Select statistic(s) to display):</b>',
@@ -580,6 +582,46 @@ class KeywordsAnalysis():
                                                        margin='10px 32px 0px 2px',
                                                        width='180px')
         
+        # function to define what happens when the display button is clicked
+        def on_display_button_clicked(_):
+            with display_out:
+                # clear output and get word index
+                clear_output()
+                index=0
+                display_index.value=0#self.all_words[0]
+                self.new_display=True
+                
+                if select_corpus.value!=select_ref_corpus.value:
+                    if multi:
+                        viz_df = self.multicorp_comparison.copy()
+                    else:
+                        self.pairwise_compare = two_corpus_compare(self.wordcount_df, 
+                                                               select_corpus.value,
+                                                               select_ref_corpus.value,
+                                                               self.total_by_source, 
+                                                               self.total_words_in_corpus)
+                    
+                        viz_df = self.pairwise_compare.copy()
+                    
+                    # set the words as the index of the dataframe
+                    viz_df.set_index('word', inplace=True)
+                    
+                    # display updated charts
+                    self.create_graphs(viz_df, 
+                                       index, 
+                                       select_corpus.value, 
+                                       select_ref_corpus.value,
+                                       select_chart.value, 
+                                       options, 
+                                       select_sort.value, 
+                                       right_padding, 
+                                       multi)
+                else:
+                    print('Please select a different study and reference corpora!')
+                
+        # link the display button with the function
+        display_button.on_click(on_display_button_clicked)
+        
         enter_index, display_index = self.select_n_widget('<b>Select index:</b>', 
                                                           value=0,
                                                           min_value=0,
@@ -593,67 +635,92 @@ class KeywordsAnalysis():
                     clear_output()
                     index= display_index.value#self.all_words.index(display_index.value)
                     
+                    if multi:
+                        viz_df = self.multicorp_comparison.copy()
+                    else:
+                        viz_df = self.pairwise_compare.copy()
+                    
+                    # set the words as the index of the dataframe
+                    viz_df.set_index('word', inplace=True)
+                    
                     # display updated charts
                     self.create_graphs(viz_df, 
                                        index, 
                                        select_corpus.value, 
+                                       select_ref_corpus.value,
                                        select_chart.value, 
                                        options, 
                                        select_sort.value, 
                                        right_padding, 
                                        multi)
                     self.new_display=False
-                    print('self.new_display move:',self.new_display)
-                    print('display_index.value:',display_index.value)
+                    
+        # widget to display analysis
+        save_button, save_out = self.click_button_widget(desc='Save data to excel',
+                                                       margin='10px 32px 0px 2px',
+                                                       width='180px')
+        
+        # function to define what happens when the display button is clicked
+        def on_save_button_clicked(_):
+            with save_out:
+                # clear output and get word index
+                clear_output()
+                # specify the saving parameters
+                output_dir = './output/'
+                
+                try:
+                    if multi:
+                        df = self.multicorp_comparison
+                        file_name = 'multi_corpus_analysis.xlsx'
+                        sheet_name = 'multi-corpus-analysis'
+                    else:
+                        df = self.pairwise_compare
+                        sheet_name = 'pairwise_analysis'
+                        file_name = 'study_{}_ref_{}.xlsx'.format(select_corpus.value,
+                                                              select_ref_corpus.value)
+                except:
+                    print('Please generate and display a chart first before saving!')
+                
+                # select the number of rows to display
+                display_n = 5
+                
+                # save and display the first n rows
+                self.save_analysis(df, output_dir, file_name, sheet_name, display_n)
+                
+        # link the display button with the function
+        save_button.on_click(on_save_button_clicked)
         
         # observe when selection slider is moved
         display_index.observe(_cb, names='value')
-        
-        # function to define what happens when the display button is clicked
-        def on_display_button_clicked(_):
-            with display_out:
-                # clear output and get word index
-                clear_output()
-                index=0
-                display_index.value=0#self.all_words[0]
-                self.new_display=True
-                
-                # display updated charts
-                self.create_graphs(viz_df, 
-                                   index, 
-                                   select_corpus.value, 
-                                   select_chart.value, 
-                                   options, 
-                                   select_sort.value, 
-                                   right_padding, 
-                                   multi)
-                
-        # link the display button with the function
-        display_button.on_click(on_display_button_clicked)
         
         # displaying inputs, buttons and their outputs
         vbox1 = widgets.VBox([enter_corpus,
                               select_corpus], 
                              layout = widgets.Layout(width='180px', height='150px'))
         
-        vbox2 = widgets.VBox([enter_chart, 
-                              select_chart], 
-                             layout = widgets.Layout(width='260px', height='150px'))
+        vbox2 = widgets.VBox([enter_ref_corpus, 
+                              select_ref_corpus], 
+                             layout = widgets.Layout(width='180px', height='150px'))
         
-        vbox3 = widgets.VBox([enter_sort, 
+        vbox3 = widgets.VBox([enter_chart, 
+                              select_chart], 
+                             layout = widgets.Layout(width='260px', height='200px'))
+        
+        vbox4 = widgets.VBox([enter_sort, 
                               select_sort,
                               enter_index, 
                               display_index,
-                              display_button], 
-                             layout = widgets.Layout(width='250px', height='200px'))
+                              display_button, 
+                              save_button], 
+                             layout = widgets.Layout(width='250px', height='220px'))
         
         # exclude corpus selection for multi-corpora analysis
         if multi:
-            hbox1 = widgets.HBox([vbox2, vbox3])
+            hbox1 = widgets.HBox([vbox3, vbox4])
         else:
-            hbox1 = widgets.HBox([vbox1, vbox2, vbox3])
+            hbox1 = widgets.HBox([vbox1, vbox2, vbox3, vbox4])
             
-        vbox = widgets.VBox([hbox1, display_out])
+        vbox = widgets.VBox([hbox1, display_out, save_out])
         
         return vbox
     
@@ -1091,7 +1158,8 @@ class KeywordsAnalysis():
     def select_options(self, 
                        instruction: str,
                        options: list,
-                       value: str):
+                       value: str,
+                       width: str = '180px'):
         '''
         Create widgets for selecting the number of entities to display
         
@@ -1099,6 +1167,7 @@ class KeywordsAnalysis():
             instruction: text instruction for user
             options: list of options for user
             value: initial value of the widget
+            width: the width of the widget box
         '''
         # widget to display instruction
         enter_text = widgets.HTML(
@@ -1113,7 +1182,7 @@ class KeywordsAnalysis():
             value=value,
             description='',
             disabled=False,
-            layout = widgets.Layout(width='180px')
+            layout = widgets.Layout(width=width)
             )
         
         return enter_text, select_option
@@ -1131,6 +1200,7 @@ class KeywordsAnalysis():
             instruction: text instruction for user
             options: list of options for user
             value: initial value of the widget
+            width: the width of the widget box
         '''
         # widget to display instruction
         enter_m_text = widgets.HTML(
