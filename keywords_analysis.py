@@ -77,7 +77,7 @@ class DownloadFileLink(FileLink):
                 self.result_html_suffix,
             ]
         )
-        
+
 
 class KeywordsAnalysis():
     '''
@@ -93,6 +93,8 @@ class KeywordsAnalysis():
         # initiate other necessary variables
         self.large_file_size = 1000000
         self.text_df = pd.DataFrame()
+        self.freq_df = pd.DataFrame()
+        self.corpus_options = []
         self.new_display = True
         
         # create input and output folders if not already exist
@@ -106,7 +108,15 @@ class KeywordsAnalysis():
             placeholder='Enter corpus name...',
             description='Corpus Name:',
             disabled=False,
-            style= {'description_width': 'initial'}
+            style= {'description_width': 'initial'},
+            layout = widgets.Layout(margin='0px 20px 0px 0px')
+        )
+        
+        self.freq_list = widgets.Checkbox(
+            value=False,
+            description='Uploading word frequency list',
+            disabled=False,
+            indent=False
         )
         
         # widget for file upload
@@ -115,7 +125,7 @@ class KeywordsAnalysis():
             accept='.txt, .xlsx, .csv, .zip', # accepted file extension
             multiple=True,  # True to accept multiple files
             error='File upload unsuccessful. Please try again!',
-            layout = widgets.Layout(width='305px',
+            layout = widgets.Layout(width='300px',
                                     margin='5px 0px 0px 0px')
             )
     
@@ -131,8 +141,10 @@ class KeywordsAnalysis():
                     # check file size
                     self.check_file_size(self.file_uploader)
                     
+                    # check if it's frequency list
+                    freq_list = self.freq_list.value
                     # reading uploaded files
-                    self.process_upload()
+                    self.process_upload(freq_list=freq_list)
                     
                     # give notification when uploading is finished
                     print('Finished uploading files.')
@@ -145,15 +157,18 @@ class KeywordsAnalysis():
                     
                     self.corpus_name.value = ''
                     self.corpus_name.placeholder='Enter corpus name...'
+                    self.freq_list.value = False
                     print('\nYou can now upload your next corpus, or continue to the next step')
                 
                 # clear saved value in cache and reset counter
                 self.file_uploader.value = ()
-                
-                
+        
         # observe when file is uploaded and display output
         self.file_uploader.observe(_cb, names='value')
-        self.upload_box = widgets.VBox([self.corpus_name, 
+        
+        hbox = widgets.HBox([self.corpus_name, self.freq_list])
+        
+        self.upload_box = widgets.VBox([hbox, 
                                         self.file_uploader, 
                                         self.upload_out])
         
@@ -237,7 +252,7 @@ class KeywordsAnalysis():
         temp = None
     
     
-    def load_txt(self, file, n) -> list:
+    def load_txt(self, file, n, freq_list) -> list:
         '''
         Load individual txt file content and return a dictionary object, 
         wrapped in a list so it can be merged with list of pervious file contents.
@@ -246,31 +261,34 @@ class KeywordsAnalysis():
             file: the file containing the text data
             n: index of the uploaded file (value='unzip' if the file is extracted form a zip file
         '''
-        # read the unzip text file
-        if n=='unzip':
-            # read the unzip text file
-            with open(file) as f:
-                temp = {'text_name': file.name[:-4],
-                        'text': f.read()
-                }
-            
-            os.remove(file)
+        if freq_list==True:
+            print('Please upload an excel spreadsheet for your frequency list!')
         else:
-            file = self.file_uploader.value[n]
-            # read and decode uploaded text
-            temp = {'text_name': file['name'][:-4],
-                    'text': codecs.decode(file['content'], encoding='utf-8', errors='replace')
-            }
+            # read the unzip text file
+            if n=='unzip':
+                # read the unzip text file
+                with open(file) as f:
+                    temp = {'text_name': file.name[:-4],
+                            'text': f.read()
+                    }
+                
+                os.remove(file)
+            else:
+                file = self.file_uploader.value[n]
+                # read and decode uploaded text
+                temp = {'text_name': file['name'][:-4],
+                        'text': codecs.decode(file['content'], encoding='utf-8', errors='replace')
+                }
+                
+                # check for unknown characters and display warning if any
+                unknown_count = temp['text'].count('�')
+                if unknown_count>0:
+                    print('We identified {} unknown character(s) in the following text: {}'.format(unknown_count, file['name'][:-4]))
             
-            # check for unknown characters and display warning if any
-            unknown_count = temp['text'].count('�')
-            if unknown_count>0:
-                print('We identified {} unknown character(s) in the following text: {}'.format(unknown_count, file['name'][:-4]))
-        
-        return [temp]
+            return [temp]
 
 
-    def load_table(self, file, n) -> list:
+    def load_table(self, file, n, freq_list) -> list:
         '''
         Load csv or xlsx file
         
@@ -287,14 +305,28 @@ class KeywordsAnalysis():
         except:
             temp_df = pd.read_excel(file)
             
-        
-        # check if the column text and text_name present in the table, if not, skip the current spreadsheet
-        if ('text' not in temp_df.columns) or ('text_name' not in temp_df.columns):
-            print('File {} does not contain the required header "text" and "text_name"'.format(self.file_uploader.value[n]['name']))
-            return []
-        
-        # return a list of dict objects
-        temp = temp_df[['text_name', 'text', 'source']].to_dict(orient='index').values()
+        if freq_list==True:
+            temp_df.rename(columns={temp_df.columns[0]: 'word',
+                                    temp_df.columns[1]: self.corpus_name.value}, 
+                           inplace=True)
+            temp_df['word'] = temp_df['word'].apply(lambda x: str(x).lower())
+            if len(self.freq_df)==0:
+                self.freq_df = temp_df
+            else:
+                self.freq_df = self.freq_df.merge(temp_df, how='outer', left_on='word', right_on='word')
+                self.freq_df.fillna(0, inplace=True)
+            
+            print('Uploading frequency list successful!')
+                
+            temp = []
+        else:
+            # check if the column text and text_name present in the table, if not, skip the current spreadsheet
+            if ('text' not in temp_df.columns) or ('text_name' not in temp_df.columns):
+                print('File {} does not contain the required header "text" and "text_name"'.format(self.file_uploader.value[n]['name']))
+                temp = []
+            
+            # return a list of dict objects
+            temp = temp_df[['text_name', 'text', 'source']].to_dict(orient='index').values()
         
         return temp
     
@@ -312,7 +344,9 @@ class KeywordsAnalysis():
         return temp_df
     
     
-    def process_upload(self, deduplication: bool = True):
+    def process_upload(self, 
+                       freq_list: bool = False,
+                       deduplication: bool = True):
         '''
         Pre-process uploaded .txt files into pandas dataframe
 
@@ -336,28 +370,29 @@ class KeywordsAnalysis():
         for file_type in ['*.txt', '*.xlsx', '*.csv']:
             files += [[file, 'unzip'] for file in Path('./input').rglob(file_type) if 'MACOSX' not in str(file)]
         
+        #try:
         print('Reading uploaded files...')
         print('This may take a while...')
         # process and upload files
         for file, n in tqdm(files):
             # process text files
             if str(file).lower().endswith('txt'):
-                text_dic = self.load_txt(file, n)
+                text_dic = self.load_txt(file, n, freq_list)
             # process xlsx or csv files
             else:
-                text_dic = self.load_table(file, n)
+                text_dic = self.load_table(file, n, freq_list)
             all_data.extend(text_dic)
         
         # remove files and directory once finished
         os.system('rm -r ./input')
+    
+        # convert them into a pandas dataframe format and add unique id
+        temp_df = pd.DataFrame.from_dict(all_data)
         
-        try:
-            # convert them into a pandas dataframe format and add unique id
-            temp_df = pd.DataFrame.from_dict(all_data)
-            
-            if 'source' not in temp_df.columns:
-                temp_df['source'] = len(temp_df) * [self.corpus_name.value]
-                
+        if 'source' not in temp_df.columns:
+            temp_df['source'] = len(temp_df) * [self.corpus_name.value]
+        
+        if len(temp_df)!=0:
             temp_df = self.hash_gen(temp_df)
             
             # clear up all_data
@@ -368,8 +403,8 @@ class KeywordsAnalysis():
             # deduplicate the text_df by text_id
             if deduplication:
                 self.text_df.drop_duplicates(subset='text_id', keep='first', inplace=True)
-        except:
-            print('File upload unsuccessful. Please try again.')
+        #except:
+        #    print('File upload unsuccessful. Please try again.')
         
     
     def calculate_word_statistics(self):
@@ -381,12 +416,25 @@ class KeywordsAnalysis():
         please visit this website: https://ucrel.lancs.ac.uk/llwizard.html
         '''
         # define corpus list
-        self.corpus_options = list(set(self.text_df.source))
+        if len(self.text_df)!=0:
+            self.corpus_options += list(set(self.text_df.source))
+            
+            # collate all texts based on source and 
+            # use CountVectorizer to count the number of words in each source
+            self.wordcount_df = collapse_corpus_by_source(df=self.text_df)
+            self.wordcount_df = count_words(df=self.wordcount_df)
         
-        # collate all texts based on source and 
-        # use CountVectorizer to count the number of words in each source
-        self.wordcount_df = collapse_corpus_by_source(df=self.text_df)
-        self.wordcount_df = count_words(df=self.wordcount_df)
+        # if frequency list is uploaded
+        if len(self.freq_df)!=0:
+            self.corpus_options += list(self.freq_df.columns.difference(['word']))
+            
+            if len(self.text_df)==0:
+                self.wordcount_df = self.freq_df.copy()
+            else:
+                self.wordcount_df = self.wordcount_df.merge(self.freq_df, how='outer', left_on='word', right_on='word')
+            self.wordcount_df.fillna(0, inplace=True)
+            self.wordcount_df = pd.concat([self.wordcount_df[self.wordcount_df.columns.difference(['word'])], 
+                                           self.wordcount_df['word']], axis=1)
         
         # get total word counts based on source and overall in the corpus
         self.wordcount_df, self.total_by_source, self.total_words_in_corpus = get_totals(df=self.wordcount_df)
