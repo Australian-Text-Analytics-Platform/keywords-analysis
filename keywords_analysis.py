@@ -95,6 +95,8 @@ class KeywordsAnalysis():
         self.text_df = pd.DataFrame()
         self.freq_df = pd.DataFrame()
         self.corpus_options = []
+        self.current_study_corpus = None
+        self.current_ref_corpus = None
         self.new_display = True
         
         # CSS styling 
@@ -702,11 +704,15 @@ class KeywordsAnalysis():
                     if multi:
                         viz_df = self.multicorp_comparison.copy()
                     else:
-                        self.pairwise_compare = two_corpus_compare(self.wordcount_df, 
-                                                               select_corpus.value,
-                                                               select_ref_corpus.value,
-                                                               self.total_by_source, 
-                                                               self.total_words_in_corpus)
+                        if (self.current_study_corpus!=select_corpus.value) or \
+                            (self.current_ref_corpus!=select_ref_corpus.value):
+                            self.pairwise_compare = two_corpus_compare(self.wordcount_df, 
+                                                                   select_corpus.value,
+                                                                   select_ref_corpus.value,
+                                                                   self.total_by_source, 
+                                                                   self.total_words_in_corpus)
+                            self.current_study_corpus = select_corpus.value
+                            self.current_ref_corpus = select_ref_corpus.value
                     
                         viz_df = self.pairwise_compare.copy()
                     

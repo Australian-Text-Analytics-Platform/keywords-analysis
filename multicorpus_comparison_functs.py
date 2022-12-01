@@ -137,18 +137,18 @@ def two_corpus_compare(df, source1, source2, total_by_source, total_words_in_cor
     # log-likelihood calculation per-source vs rest of corpus
     # calculate outdf['log_likelihood_'+source] = 
     # 2 * x[source] * np.log(x[source]/x['expected_wc_' + source])
-    tqdm.pandas(desc='Step 2.1',leave=False)
-    tmparray = outdf.apply(lambda x: single_source_ln(x[source1], 
+    tqdm.pandas(desc='Step 1/6',leave=False)
+    tmparray = outdf.progress_apply(lambda x: single_source_ln(x[source1], 
                                                       x['expected_study_corpus_wc']), 
                            axis=1).array
     # add 2 * (x['total_word_used'] - x[source]) * np.log((x['total_word_used'] - x[source])/x['expected_restofcorpus_wc_' + source])
-    tqdm.pandas(desc='Step 2.2',leave=False)
+    tqdm.pandas(desc='Step 2/6',leave=False)
     if source2=='rest of corpus':
-        tmparray += outdf.apply(lambda x: single_source_ln((x['total_word_used'] - x[source1]), 
+        tmparray += outdf.progress_apply(lambda x: single_source_ln((x['total_word_used'] - x[source1]), 
                                                            x['expected_reference_corpus_wc']), 
                                 axis=1).array
     else:
-        tmparray += outdf.apply(lambda x: single_source_ln((x[source2]), 
+        tmparray += outdf.progress_apply(lambda x: single_source_ln((x[source2]), 
                                                            x['expected_reference_corpus_wc']), 
                                 axis=1).array
     outdf['log_likelihood'] = tmparray
@@ -156,8 +156,8 @@ def two_corpus_compare(df, source1, source2, total_by_source, total_words_in_cor
     # %diff calculation per-source
     # calculate outdf['percent_diff_'+source] =
     # 100 * (x['normalised_wc_'+source] - x['normalised_restofcorpus_wc_'+source] / x['normalised_restofcorpus_wc_'+source] or 1E-18
-    tqdm.pandas(desc='Step 2.3',leave=False)
-    outdf['percent_diff'] = outdf.apply(lambda x: get_percent_diff(x['normalised_study_corpus_wc'],
+    tqdm.pandas(desc='Step 3/6',leave=False)
+    outdf['percent_diff'] = outdf.progress_apply(lambda x: get_percent_diff(x['normalised_study_corpus_wc'],
                                                                    x['normalised_reference_corpus_wc'], 
                                                                    diff_zero_freq_adjustment), axis=1)
     
@@ -174,8 +174,8 @@ def two_corpus_compare(df, source1, source2, total_by_source, total_words_in_cor
     # relative_risk calculation per-source
     # calculate outdf['relative_risk_'+source] =
     # x['normalised_wc_'+source]/x['normalised_restofcorpus_wc_'+source] OR np.nan
-    tqdm.pandas(desc='Step 2.4',leave=False)
-    outdf['relative_risk'] = outdf.apply(lambda x: relative_risk(x['normalised_study_corpus_wc'], 
+    tqdm.pandas(desc='Step 4/6',leave=False)
+    outdf['relative_risk'] = outdf.progress_apply(lambda x: relative_risk(x['normalised_study_corpus_wc'], 
                                                                  x['normalised_reference_corpus_wc']), axis=1)
     
     # log_ratio calculation per-source
@@ -183,8 +183,8 @@ def two_corpus_compare(df, source1, source2, total_by_source, total_words_in_cor
     # np.log2(numerator/denominator)
     # numerator = normalised_freq_source OR 0.5/total_words_source1
     # denominator = normalised_freq_rest_of_corpus OR 0.5/total_words_rest_of_corpus        
-    tqdm.pandas(desc='Step 2.5',leave=False)
-    outdf['log_ratio'] = outdf.apply(lambda x: log2_ratio(x['normalised_study_corpus_wc'], 
+    tqdm.pandas(desc='Step 5/6',leave=False)
+    outdf['log_ratio'] = outdf.progress_apply(lambda x: log2_ratio(x['normalised_study_corpus_wc'], 
                                                           x['normalised_reference_corpus_wc'], 
                                                           total_by_source[source1], 
                                                           wc_reference_corpus), axis=1)
@@ -194,14 +194,14 @@ def two_corpus_compare(df, source1, source2, total_by_source, total_words_in_cor
     # numerator/denominator OR np.nan
     # numerator = source_wc/(total_words_source-source_wc)
     # denominator = rest_of_corpus_wc/(total_words_rest_of_corpus-rest_of_corpus_wc)
-    tqdm.pandas(desc='Step 2.6',leave=False)
+    tqdm.pandas(desc='Step 6/6',leave=False)
     if source2=='rest of corpus':
-        outdf['odds_ratio'] = outdf.apply(lambda x: odds_ratio(x[source1], 
+        outdf['odds_ratio'] = outdf.progress_apply(lambda x: odds_ratio(x[source1], 
                                                                (x['total_word_used'] - x[source1]), 
                                                                total_by_source[source1], 
                                                                wc_reference_corpus), axis=1)
     else:
-        outdf['odds_ratio'] = outdf.apply(lambda x: odds_ratio(x[source1], 
+        outdf['odds_ratio'] = outdf.progress_apply(lambda x: odds_ratio(x[source1], 
                                                                x[source2], 
                                                                total_by_source[source1], 
                                                                wc_reference_corpus), axis=1)
