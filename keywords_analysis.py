@@ -145,24 +145,28 @@ class KeywordsAnalysis():
         def _cb(change):
             with upload_out:
                 if self.file_uploader.value!=():
-                    # clear output and give notification that file is being uploaded
-                    clear_output()
-                    
-                    # check file size
-                    self.check_file_size(self.file_uploader)
-                    
-                    # reading uploaded files
-                    self.process_upload(freq_list.value,
-                                        corpus_name.value)
-                    
-                    # reset upload widget values
-                    corpus_name.value = ''
-                    corpus_name.placeholder='Enter corpus name...'
-                    freq_list.value = False
-                    
-                    # give notification when uploading is finished
-                    self.notify_and_reset_upload_widget()
-                
+                    try:
+                        # clear output and give notification that file is being uploaded
+                        clear_output()
+                        
+                        # check file size
+                        self.check_file_size(self.file_uploader)
+                        
+                        # reading uploaded files
+                        self.process_upload(freq_list.value,
+                                            corpus_name.value)
+                        
+                        # reset upload widget values
+                        corpus_name.value = ''
+                        corpus_name.placeholder='Enter corpus name...'
+                        freq_list.value = False
+                        
+                        # give notification when uploading is finished
+                        self.notify_and_reset_upload_widget()
+                    except:
+                        print('\033[1m\nFile upload unsuccessful...\033[0m')
+                        print("Please ensure to tick the 'Uploading word frequency list' box when uploading a frequency list.")
+                        
                 # clear saved value in cache and reset counter
                 self.file_uploader.value = ()
         
@@ -388,7 +392,7 @@ class KeywordsAnalysis():
             
         if freq_list:
             # load word frequency list
-            temp = self.load_freq_list(temp_df, corpus_name)
+            temp = self.load_freq_list(temp_df, corpus_name, n)
         else:
             # load text files
             temp = self.load_table_text(temp_df, n)
@@ -396,26 +400,32 @@ class KeywordsAnalysis():
         return temp
     
     
-    def load_freq_list(self, df, corpus_name):
+    def load_freq_list(self, df, corpus_name, n):
         '''
         Function to load word frequency list
         
         Args:
             df: the dataframe containing the word frequency list
             corpus_name: the name of the corpus
+            n: index of the uploaded file (value='unzip' if the file is extracted form a zip file)
         '''
-        # rename the columns to word and corpus name
-        df.rename(columns={df.columns[0]: 'word',
-                           df.columns[1]: corpus_name}, 
-                  inplace=True)
-        
-        # lower case the words
-        df['word'] = df['word'].apply(lambda x: str(x).lower())
-        
-        # add data to the word frequency dataframe
-        self.freq_df = self.merge_dataframes(self.freq_df, df)
-        
-        print('\033[1mUploading fword requency list successful!\033[0m')
+        # check if the column text and text_name present in the table, if not, skip the current spreadsheet
+        if ('word' not in df.columns) or ('freq' not in df.columns):
+            print('\033[1mFrequency list upload unsuccessful...\033[0m')
+            print('File {} does not contain the required header "word" and "freq"\n'.format(self.file_uploader.value[n]['name']))
+        else:
+            # rename the columns to word and corpus name
+            df.rename(columns={df.columns[0]: 'word',
+                               df.columns[1]: corpus_name}, 
+                      inplace=True)
+            
+            # lower case the words
+            df['word'] = df['word'].apply(lambda x: str(x).lower())
+            
+            # add data to the word frequency dataframe
+            self.freq_df = self.merge_dataframes(self.freq_df, df)
+            
+            print('\033[1mUploading word requency list successful!\033[0m')
             
         return []
     
@@ -492,6 +502,7 @@ class KeywordsAnalysis():
         temp_wordcount_df = pd.DataFrame()
         if len(self.text_df)!=0:
             self.corpus_options += list(set(self.text_df.source))
+            self.corpus_options = list(set(self.corpus_options))
             
             # collate all texts based on source and 
             # use CountVectorizer to count the number of words in each source
@@ -652,6 +663,7 @@ class KeywordsAnalysis():
             options = {'normalised word count (study corpus)':[-10,'normalised_study_corpus_wc'],
                        'normalised word count (reference corpus)':[-9,'normalised_reference_corpus_wc'],
                        'log-likelihood':[-7,'log_likelihood'],
+                       'precent-diff':[-6,'percent_diff'],
                        'bayes factor BIC':[-5,'bayes_factor_bic'],
                        'ELL':[-4,'ell'],
                        'relative risk':[-3,'relative_risk'],
@@ -768,7 +780,7 @@ class KeywordsAnalysis():
                                        multi)
                     self.new_display=False
                     
-        # widget to display analysis
+        # widget to sav analysis
         save_button, save_out = self.click_button_widget(desc='Save data to excel',
                                                        margin='10px 32px 0px 2px',
                                                        width='180px')
@@ -792,6 +804,13 @@ class KeywordsAnalysis():
                         sheet_name = 'pairwise_analysis'
                         file_name = 'study_{}_ref_{}.xlsx'.format(select_corpus.value,
                                                               select_ref_corpus.value)
+                        
+                        # drop excluded corpus from the table
+                        if select_ref_corpus.value!='rest of corpus':
+                            included_corpus = np.array([select_corpus.value,select_ref_corpus.value])
+                            excluded_corpus = np.setdiff1d(self.text_df.source.unique(),included_corpus)
+                            df = df.drop(excluded_corpus, axis=1)
+                                
                 except:
                     print('Please generate and display a chart first before saving!')
                 
