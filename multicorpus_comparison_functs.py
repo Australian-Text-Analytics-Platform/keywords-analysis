@@ -111,6 +111,8 @@ def two_corpus_compare(df, source1, source2, total_by_source, total_words_in_cor
         wc_reference_corpus = total_words_in_corpus - total_by_source[source1] 
     else:
         wc_reference_corpus = total_by_source[source2]
+    #print('wc_reference_corpus:',wc_reference_corpus)
+    #print('outdf:',outdf)
     # expected word count for each source =
     # total words in each source * total word used (per word) / total words in the corpus
     outdf['expected_study_corpus_wc'] = total_by_source[source1] * outdf['total_word_used']/ total_words_in_corpus
