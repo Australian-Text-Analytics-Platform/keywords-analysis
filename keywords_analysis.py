@@ -601,8 +601,8 @@ class KeywordsAnalysis():
                       inc_corpus2: str, 
                       inc_charts: list, 
                       options: dict(), 
-                      sort_value: str,
-                      right_padding: float,
+                      sort_value: str, 
+                      right_padding: float, 
                       multi: bool):
         '''
         Function to generate line charts based on selected parameters
@@ -686,7 +686,7 @@ class KeywordsAnalysis():
         # widget to select statistics to be included in the line chart
         enter_chart, select_chart = self.select_multiple_options('<b>Select statistic(s) to display):</b>',
                                                                list(options.keys()),
-                                                               select_chart_value,
+                                                               ['log-likelihood'], #select_chart_value,
                                                                '230px')
         
         # widgets to select how to sort the data
@@ -694,6 +694,12 @@ class KeywordsAnalysis():
         enter_sort, select_sort = self.select_options(instruction='<b>Sorted by:</b>',
                                                       options=sort_options,
                                                       value='log-likelihood')
+        
+        # widgets to select positive/negative/all words
+        keyword_options = ['positive (overuse)', 'negative (underuse)', 'all keywords']
+        enter_keyword, select_keyword = self.select_options(instruction='<b>Keywords to display:</b>',
+                                                      options=keyword_options,
+                                                      value='positive (overuse)')
         
         # widget to display analysis
         display_button, display_out = self.click_button_widget(desc='Display chart',
@@ -727,6 +733,12 @@ class KeywordsAnalysis():
                             self.current_ref_corpus = select_ref_corpus.value
                     
                         viz_df = self.pairwise_compare.copy()
+                        
+                        # set the keywords to display (positive/negative/all)
+                        if select_keyword.value=='positive (overuse)':
+                            viz_df = viz_df[viz_df['percent_diff']>0]
+                        elif select_keyword.value=='negative (underuse)':
+                            viz_df = viz_df[viz_df['percent_diff']<0]
                     
                     # set the words as the index of the dataframe
                     viz_df.set_index('word', inplace=True)
@@ -764,6 +776,12 @@ class KeywordsAnalysis():
                         viz_df = self.multicorp_comparison.copy()
                     else:
                         viz_df = self.pairwise_compare.copy()
+                        
+                        # set the keywords to display (positive/negative/all)
+                        if select_keyword.value=='positive (overuse)':
+                            viz_df = viz_df[viz_df['percent_diff']>0]
+                        elif select_keyword.value=='negative (underuse)':
+                            viz_df = viz_df[viz_df['percent_diff']<0]
                     
                     # set the words as the index of the dataframe
                     viz_df.set_index('word', inplace=True)
@@ -828,29 +846,33 @@ class KeywordsAnalysis():
         
         # displaying inputs, buttons and their outputs
         vbox1 = widgets.VBox([enter_corpus,
-                              select_corpus], 
-                             layout = widgets.Layout(width='180px', height='150px'))
-        
-        vbox2 = widgets.VBox([enter_ref_corpus, 
+                              select_corpus,
+                              enter_ref_corpus, 
                               select_ref_corpus], 
-                             layout = widgets.Layout(width='180px', height='150px'))
+                             layout = widgets.Layout(width='180px'))#, height='150px'))
         
-        vbox3 = widgets.VBox([enter_chart, 
+        vbox2 = widgets.VBox([enter_chart, 
                               select_chart], 
-                             layout = widgets.Layout(width='260px', height='200px'))
+                             layout = widgets.Layout(width='260px'))#, height='200px'))
         
-        vbox4 = widgets.VBox([enter_sort, 
-                              select_sort,
-                              enter_index, 
+        vbox4 = widgets.VBox([enter_index, 
                               display_index,
                               display_button, 
                               save_button], 
-                             layout = widgets.Layout(width='250px', height='220px'))
+                             layout = widgets.Layout(width='220px', height='180px'))
         
         # exclude corpus selection for multi-corpora analysis
         if multi:
-            hbox1 = widgets.HBox([vbox3, vbox4])
+            vbox3 = widgets.VBox([enter_sort, 
+                                  select_sort], 
+                                 layout = widgets.Layout(width='210px'))#, height='200px'))
+            hbox1 = widgets.HBox([vbox2, vbox3, vbox4])
         else:
+            vbox3 = widgets.VBox([enter_sort, 
+                                  select_sort,
+                                  enter_keyword, 
+                                  select_keyword], 
+                                 layout = widgets.Layout(width='210px'))#, height='200px'))
             hbox1 = widgets.HBox([vbox1, vbox2, vbox3, vbox4])
             
         vbox = widgets.VBox([hbox1, display_out, save_out])
