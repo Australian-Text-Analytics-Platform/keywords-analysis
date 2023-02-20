@@ -1,6 +1,6 @@
 # Keywords Analysis
 
-<b>Abstract:</b> in this notebook, you will use the KeywordsAnalysis tool to analyse words in a collection of corpus and identify whether certain words are over or under-represented in a particular corpus compared to their representation in other corpus.  
+<b>Abstract:</b> in this notebook, you will use the KeywordsAnalysis tool to analyse words in a collection of corpus and identify whether certain words are over or under-represented in a particular corpus (the study corpus) compared to their representation in other corpus (the reference corpus).  
 
 ## Setup
 This tool has been designed for use with minimal setup from users. You are able to run it in the cloud and any dependencies with other packages will be installed for you automatically. In order to launch and use the tool, you just need to click the below icon.
@@ -46,5 +46,10 @@ You can also see the distribution of that word on a histogram to see how often i
 <img width='500' src='./img/dist_plot.png'/>   
 
 ## Reference
-The statistical calculations used in this tool are python implementation of the statistical calculation on this [website](https://ucrel.lancs.ac.uk/llwizard.html).
+The statistical calculations used in this tool are python implementation of the statistical calculation on this [website](https://ucrel.lancs.ac.uk/llwizard.html).  
+
+## Citation
+If you find the Keywords Analysis useful in your research, please cite the following:  
+
+Jufri, Sony & Sun, Chao (2022). Keywords Analysis. v1.0. Australian Text Analytics Platform. Software. https://github.com/Australian-Text-Analytics-Platform/keywords-analysis
 

@@ -1,0 +1,42 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Keywords Analysis
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Sony
+    family-names: Jufri
+    email: sony.jufri@sydney.edu.au
+    affiliation: >-
+      Sydney Informatics Hub, a core research facility of
+      the University of Sydney
+  - given-names: Chao
+    family-names: Sun
+    email: chao.sun@sydney.edu.au
+    affiliation: >-
+      Sydney Informatics Hub, a core research facility of
+      the University of Sydney
+repository-code: >-
+  https://github.com/Australian-Text-Analytics-Platform/keywords-analysis
+abstract: >-
+  The Keywords Analysis tool is a text analytic tool that
+  you can use to analyse keywords in a collection of corpus
+  and identify whether certain words are over or
+  under-represented in a particular corpus (the study
+  corpus) compared to their representation in other corpus
+  (the reference corpus). This tool allows you to calculate
+  different word statistics from each corpus and display the
+  analysis on the charts for your analysis.
+keywords:
+  - keywords analysis
+  - keywords
+  - word statistic
+  - most used word
+  - least used word
+license: Apache-2.0
+version: '1.0'
+date-released: '2023-02-09'
