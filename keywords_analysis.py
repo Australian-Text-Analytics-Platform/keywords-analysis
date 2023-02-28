@@ -663,7 +663,7 @@ class KeywordsAnalysis():
             options = {'normalised word count (study corpus)':[-10,'normalised_study_corpus_wc'],
                        'normalised word count (reference corpus)':[-9,'normalised_reference_corpus_wc'],
                        'log-likelihood':[-7,'log_likelihood'],
-                       'precent-diff':[-6,'percent_diff'],
+                       'percent-diff':[-6,'percent_diff'],
                        'bayes factor BIC':[-5,'bayes_factor_bic'],
                        'ELL':[-4,'ell'],
                        'relative risk':[-3,'relative_risk'],
