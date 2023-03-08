@@ -620,7 +620,7 @@ class KeywordsAnalysis():
         inc_chart = [options[chart][0] for chart in inc_charts]
         
         if multi:
-            fig_title = '{}, sorted by: {}'.format('multi-corpus', sort_value)
+            fig_title = '{}, sorted by: {}'.format('multi-corpora', sort_value)
         else:
             fig_title = 'Study corpus: {}; reference corpus: {}; sorted by: {}'.format(inc_corpus1, 
                                                                                        inc_corpus2,
@@ -815,8 +815,8 @@ class KeywordsAnalysis():
                 try:
                     if multi:
                         df = self.multicorp_comparison
-                        file_name = 'multi_corpus_analysis.xlsx'
-                        sheet_name = 'multi-corpus-analysis'
+                        file_name = 'multi_corpora_analysis.xlsx'
+                        sheet_name = 'multi-corpora-analysis'
                     else:
                         df = self.pairwise_compare
                         sheet_name = 'pairwise_analysis'
