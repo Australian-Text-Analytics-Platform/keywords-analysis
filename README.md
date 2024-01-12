@@ -15,7 +15,12 @@ If you do not have access to any of the above accounts, you can use the below li
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)
 
-It may take a few minutes for Binder to launch the notebook and install the dependencies for the tool. Please be patient.  
+It may take a few minutes for Binder to launch the notebook and install the dependencies for the tool. Please be patient.
+
+
+## User Guide
+
+For instructions on how to use the Keyword Analysis tool, please refer to the [Keyword Analysis User Guide](documents/keywords_help_pages.pdf).
 
 ## Load the data
 <table style='margin-left: 10px'><tr>
