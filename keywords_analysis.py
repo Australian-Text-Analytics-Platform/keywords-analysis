@@ -389,7 +389,11 @@ class KeywordsAnalysis():
             temp_df = pd.read_csv(file)
         except:
             temp_df = pd.read_excel(file)
-            
+
+        # tidy up the dataframe column names
+        temp_df.columns = [col.lower().strip() for col in temp_df.columns]
+        temp_df.columns = [col.replace(' ', '_') for col in temp_df.columns]
+        
         if freq_list:
             # load word frequency list
             temp = self.load_freq_list(temp_df, corpus_name, n)
