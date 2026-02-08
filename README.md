@@ -5,13 +5,11 @@
 ## Setup
 This tool has been designed for use with minimal setup from users. You are able to run it in the cloud and any dependencies with other packages will be installed for you automatically. In order to launch and use the tool, you just need to click the below icon.
 
-[![Binder](https://binderhub.atap-binder.cloud.edu.au/badge_logo.svg)](https://binderhub.atap-binder.cloud.edu.au/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)      
+[![Binder](https://binderhub.rc.nectar.org.au/badge_logo.svg)](https://binderhub.rc.nectar.org.au/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)      
 
-<b>Note:</b> CILogon authentication is required. You can use your institutional, Google or Microsoft account to login.  
+<b>Note:</b> Australian Access Federation (AAF) or Reannz Tuakiri (NZ) authentication is required. 
 
-If you have trouble authenticating, please refer to [CILogon troubleshooting guide](documents/cilogon-troubleshooting.pdf).
-
-If you do not have access to any of the above accounts, you can use the below link to access the tool (this is a free Binder version, limited to 2GB memory only).   
+If you do not have access to AAF or NZ, you can use the below link to access the tool (this is a free Binder version, limited to 2GB memory only). 
 
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)
 
