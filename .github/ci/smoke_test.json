@@ -1,0 +1,5 @@
+{
+  "notebooks": [
+    {"path": "keywords_analysis.ipynb", "must_pass_cells": 2, "timeout": 900}
+  ]
+}
