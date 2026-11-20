@@ -1,17 +1,26 @@
 # Keywords Analysis
 
+> [!WARNING]
+> **This tool is archived and no longer supported or maintained.**
+> It was developed by the Australian Text Analytics Platform (ATAP), the previous phase of the
+> Language Data Commons of Australia (LDaCA). It is preserved as a frozen Docker image so that it
+> keeps launching on BinderHub as it last worked, but it will not be updated or fixed.
+> For current LDaCA text analytics tools, please use
+> [Wordflow](https://australian-text-analytics-platform.github.io/LDaCa_Text_Analytics_Tools/) and
+> [LADAL](https://ladal.edu.au).
+
 <b>Abstract:</b> in this notebook, you will use the KeywordsAnalysis tool to analyse words in a collection of corpus and identify whether certain words are over or under-represented in a particular corpus (the study corpus) compared to their representation in other corpus (the reference corpus).  
 
 ## Setup
 This tool has been designed for use with minimal setup from users. You are able to run it in the cloud and any dependencies with other packages will be installed for you automatically. In order to launch and use the tool, you just need to click the below icon.
 
-[![Binder](https://binderhub.rc.nectar.org.au/badge_logo.svg)](https://binderhub.rc.nectar.org.au/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)      
+[![Binder](https://binderhub.rc.nectar.org.au/badge_logo.svg)](https://binderhub.rc.nectar.org.au/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/archived?labpath=keywords_analysis.ipynb)      
 
 <b>Note:</b> Australian Access Federation (AAF) or Reannz Tuakiri (NZ) authentication is required. 
 
 If you do not have access to AAF or NZ, you can use the below link to access the tool (this is a free Binder version, limited to 2GB memory only). 
 
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/main?labpath=keywords_analysis.ipynb)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/Australian-Text-Analytics-Platform/keywords-analysis/archived?labpath=keywords_analysis.ipynb)
 
 It may take a few minutes for Binder to launch the notebook and install the dependencies for the tool. Please be patient.
 
@@ -58,3 +67,14 @@ If you find the Keywords Analysis useful in your research, please cite the follo
 
 Jufri, Sony & Sun, Chao (2022). Keywords Analysis. v1.0. Australian Text Analytics Platform. Software. https://github.com/Australian-Text-Analytics-Platform/keywords-analysis
 
+## Run locally with Docker
+
+The frozen environment of this tool is published as the Docker image
+[`milysun/atap-keywords-analysis`](https://hub.docker.com/r/milysun/atap-keywords-analysis). With [Docker](https://docs.docker.com/get-docker/) installed, run:
+
+```bash
+docker run --rm -p 8888:8888 milysun/atap-keywords-analysis:0d6c62fbf2ca jupyter lab --ip=0.0.0.0 --port=8888
+```
+
+then open the `http://127.0.0.1:8888/lab?token=...` link printed in the terminal.
+On Apple Silicon Macs add `--platform linux/amd64` after `docker run`.
